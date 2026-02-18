@@ -1,0 +1,393 @@
+# Agent Definitions - v0.4.0 対等な大臣制度＋オンデマンド起動
+
+agents:
+  # ========================================
+  # 常時起動エージェント
+  # ========================================
+
+  - id: "pm"
+    name: "Prime Minister"
+    japanese_name: "首相"
+    role: "commander"
+    description: "天皇からの詔勅を受け取り、ドメイン分析に基づき適切な大臣/官房長官に直接ルーティング"
+    capabilities:
+      - "ドメイン分析・ルーティング"
+      - "大臣ライフサイクル管理"
+      - "インスタンス予算管理"
+      - "タスク分割・分配"
+      - "全体進捗管理"
+      - "結果統合・報告"
+    reports_to: "emperor"
+    manages:
+      - "chief"
+      - "minister_product"
+      - "minister_research"
+      - "minister_arch"
+      - "minister_fe"
+      - "minister_be"
+      - "minister_mob"
+      - "minister_infra"
+      - "minister_ai"
+      - "minister_qa"
+      - "minister_design"
+      - "minister_uat"
+    tmux_session: "pm"
+    always_on: true
+
+  - id: "chief"
+    name: "Chief Cabinet Secretary"
+    japanese_name: "内閣官房長官"
+    role: "team_leader"
+    description: "汎用/未分類タスクを実行するチームリーダー。専門大臣と同格。"
+    capabilities:
+      - "汎用タスク実行"
+      - "官僚への委譲・管理"
+      - "結果統合・報告"
+    reports_to: "pm"
+    manages:
+      - "chief_bur1"
+      - "chief_bur2"
+    tmux_session: "chief"
+    always_on: true
+
+  # Chief の官僚（オンデマンド）
+  - id: "chief_bur1"
+    name: "Chief Bureaucrat 1"
+    japanese_name: "官房長官付官僚1"
+    role: "bureaucrat"
+    parent: "chief"
+    reports_to: "chief"
+    tmux_session: "chief"
+    pane_index: 1
+
+  - id: "chief_bur2"
+    name: "Chief Bureaucrat 2"
+    japanese_name: "官房長官付官僚2"
+    role: "bureaucrat"
+    parent: "chief"
+    reports_to: "chief"
+    tmux_session: "chief"
+    pane_index: 2
+
+  # ========================================
+  # オンデマンド大臣（各 tmux セッションで独立起動）
+  # ========================================
+
+  # Product Minister
+  - id: "minister_product"
+    name: "Product Minister"
+    japanese_name: "プロダクト大臣"
+    role: "team_leader"
+    minister_type: "product"
+    type_key: "product"
+    description: "プロダクト戦略・要件定義・優先度管理チームリーダー"
+    reports_to: "pm"
+    manages: ["product_bur1", "product_bur2"]
+    tmux_session: "m_product"
+    always_on: false
+
+  - id: "product_bur1"
+    name: "Product Bureaucrat 1"
+    role: "bureaucrat"
+    parent: "minister_product"
+    reports_to: "minister_product"
+    tmux_session: "m_product"
+    pane_index: 1
+
+  - id: "product_bur2"
+    name: "Product Bureaucrat 2"
+    role: "bureaucrat"
+    parent: "minister_product"
+    reports_to: "minister_product"
+    tmux_session: "m_product"
+    pane_index: 2
+
+  # Research Minister
+  - id: "minister_research"
+    name: "Research Minister"
+    japanese_name: "リサーチ大臣"
+    role: "team_leader"
+    minister_type: "research"
+    type_key: "research"
+    description: "市場調査・競合分析・技術調査チームリーダー"
+    reports_to: "pm"
+    manages: ["research_bur1", "research_bur2"]
+    tmux_session: "m_research"
+    always_on: false
+
+  - id: "research_bur1"
+    name: "Research Bureaucrat 1"
+    role: "bureaucrat"
+    parent: "minister_research"
+    reports_to: "minister_research"
+    tmux_session: "m_research"
+    pane_index: 1
+
+  - id: "research_bur2"
+    name: "Research Bureaucrat 2"
+    role: "bureaucrat"
+    parent: "minister_research"
+    reports_to: "minister_research"
+    tmux_session: "m_research"
+    pane_index: 2
+
+  # Architect Minister
+  - id: "minister_arch"
+    name: "Architect Minister"
+    japanese_name: "設計大臣"
+    role: "team_leader"
+    minister_type: "architect"
+    type_key: "arch"
+    description: "要件定義・技術選定・アーキテクチャ設計チームリーダー"
+    reports_to: "pm"
+    manages: ["arch_bur1", "arch_bur2"]
+    tmux_session: "m_arch"
+    always_on: false
+
+  - id: "arch_bur1"
+    name: "Architect Bureaucrat 1"
+    role: "bureaucrat"
+    parent: "minister_arch"
+    reports_to: "minister_arch"
+    tmux_session: "m_arch"
+    pane_index: 1
+
+  - id: "arch_bur2"
+    name: "Architect Bureaucrat 2"
+    role: "bureaucrat"
+    parent: "minister_arch"
+    reports_to: "minister_arch"
+    tmux_session: "m_arch"
+    pane_index: 2
+
+  # Frontend Minister
+  - id: "minister_fe"
+    name: "Frontend Minister"
+    japanese_name: "フロントエンド大臣"
+    role: "team_leader"
+    minister_type: "frontend"
+    type_key: "fe"
+    description: "Web フロントエンド開発チームリーダー"
+    reports_to: "pm"
+    manages: ["fe_bur1", "fe_bur2"]
+    tmux_session: "m_fe"
+    always_on: false
+
+  - id: "fe_bur1"
+    name: "Frontend Bureaucrat 1"
+    role: "bureaucrat"
+    parent: "minister_fe"
+    reports_to: "minister_fe"
+    tmux_session: "m_fe"
+    pane_index: 1
+
+  - id: "fe_bur2"
+    name: "Frontend Bureaucrat 2"
+    role: "bureaucrat"
+    parent: "minister_fe"
+    reports_to: "minister_fe"
+    tmux_session: "m_fe"
+    pane_index: 2
+
+  # Backend Minister (consolidated from be1/be2)
+  - id: "minister_be"
+    name: "Backend Minister"
+    japanese_name: "バックエンド大臣"
+    role: "team_leader"
+    minister_type: "backend"
+    type_key: "be"
+    description: "サーバーサイド開発チームリーダー"
+    reports_to: "pm"
+    manages: ["be_bur1", "be_bur2"]
+    tmux_session: "m_be"
+    always_on: false
+
+  - id: "be_bur1"
+    name: "Backend Bureaucrat 1"
+    role: "bureaucrat"
+    parent: "minister_be"
+    reports_to: "minister_be"
+    tmux_session: "m_be"
+    pane_index: 1
+
+  - id: "be_bur2"
+    name: "Backend Bureaucrat 2"
+    role: "bureaucrat"
+    parent: "minister_be"
+    reports_to: "minister_be"
+    tmux_session: "m_be"
+    pane_index: 2
+
+  # Mobile Minister
+  - id: "minister_mob"
+    name: "Mobile Minister"
+    japanese_name: "モバイル大臣"
+    role: "team_leader"
+    minister_type: "mobile"
+    type_key: "mob"
+    description: "モバイルアプリ開発チームリーダー"
+    reports_to: "pm"
+    manages: ["mob_bur1", "mob_bur2"]
+    tmux_session: "m_mob"
+    always_on: false
+
+  - id: "mob_bur1"
+    name: "Mobile Bureaucrat 1"
+    role: "bureaucrat"
+    parent: "minister_mob"
+    reports_to: "minister_mob"
+    tmux_session: "m_mob"
+    pane_index: 1
+
+  - id: "mob_bur2"
+    name: "Mobile Bureaucrat 2"
+    role: "bureaucrat"
+    parent: "minister_mob"
+    reports_to: "minister_mob"
+    tmux_session: "m_mob"
+    pane_index: 2
+
+  # Infrastructure Minister
+  - id: "minister_infra"
+    name: "Infrastructure Minister"
+    japanese_name: "インフラ大臣"
+    role: "team_leader"
+    minister_type: "infra"
+    type_key: "infra"
+    description: "インフラ・DevOps チームリーダー"
+    reports_to: "pm"
+    manages: ["infra_bur1", "infra_bur2"]
+    tmux_session: "m_infra"
+    always_on: false
+
+  - id: "infra_bur1"
+    name: "Infra Bureaucrat 1"
+    role: "bureaucrat"
+    parent: "minister_infra"
+    reports_to: "minister_infra"
+    tmux_session: "m_infra"
+    pane_index: 1
+
+  - id: "infra_bur2"
+    name: "Infra Bureaucrat 2"
+    role: "bureaucrat"
+    parent: "minister_infra"
+    reports_to: "minister_infra"
+    tmux_session: "m_infra"
+    pane_index: 2
+
+  # AI/Data Minister
+  - id: "minister_ai"
+    name: "AI/Data Minister"
+    japanese_name: "AI大臣"
+    role: "team_leader"
+    minister_type: "ai"
+    type_key: "ai"
+    description: "AI/ML・データサイエンス チームリーダー"
+    reports_to: "pm"
+    manages: ["ai_bur1", "ai_bur2"]
+    tmux_session: "m_ai"
+    always_on: false
+
+  - id: "ai_bur1"
+    name: "AI Bureaucrat 1"
+    role: "bureaucrat"
+    parent: "minister_ai"
+    reports_to: "minister_ai"
+    tmux_session: "m_ai"
+    pane_index: 1
+
+  - id: "ai_bur2"
+    name: "AI Bureaucrat 2"
+    role: "bureaucrat"
+    parent: "minister_ai"
+    reports_to: "minister_ai"
+    tmux_session: "m_ai"
+    pane_index: 2
+
+  # QA Minister
+  - id: "minister_qa"
+    name: "QA Minister"
+    japanese_name: "品質管理大臣"
+    role: "team_leader"
+    minister_type: "qa"
+    type_key: "qa"
+    description: "品質保証・テスト・セキュリティ チームリーダー"
+    reports_to: "pm"
+    manages: ["qa_bur1", "qa_bur2"]
+    tmux_session: "m_qa"
+    always_on: false
+
+  - id: "qa_bur1"
+    name: "QA Bureaucrat 1"
+    role: "bureaucrat"
+    parent: "minister_qa"
+    reports_to: "minister_qa"
+    tmux_session: "m_qa"
+    pane_index: 1
+
+  - id: "qa_bur2"
+    name: "QA Bureaucrat 2"
+    role: "bureaucrat"
+    parent: "minister_qa"
+    reports_to: "minister_qa"
+    tmux_session: "m_qa"
+    pane_index: 2
+
+  # Design Minister
+  - id: "minister_design"
+    name: "Design Minister"
+    japanese_name: "デザイン大臣"
+    role: "team_leader"
+    minister_type: "design"
+    type_key: "design"
+    description: "UI/UXデザイン・デザインシステム チームリーダー"
+    reports_to: "pm"
+    manages: ["design_bur1", "design_bur2"]
+    tmux_session: "m_design"
+    always_on: false
+
+  - id: "design_bur1"
+    name: "Design Bureaucrat 1"
+    role: "bureaucrat"
+    parent: "minister_design"
+    reports_to: "minister_design"
+    tmux_session: "m_design"
+    pane_index: 1
+
+  - id: "design_bur2"
+    name: "Design Bureaucrat 2"
+    role: "bureaucrat"
+    parent: "minister_design"
+    reports_to: "minister_design"
+    tmux_session: "m_design"
+    pane_index: 2
+
+  # UAT Minister
+  - id: "minister_uat"
+    name: "UAT Minister"
+    japanese_name: "UAT大臣"
+    role: "team_leader"
+    minister_type: "uat"
+    type_key: "uat"
+    description: "ユーザー受入テスト・動作検証 チームリーダー"
+    reports_to: "pm"
+    manages: ["uat_bur1", "uat_bur2"]
+    tmux_session: "m_uat"
+    always_on: false
+
+  - id: "uat_bur1"
+    name: "UAT Bureaucrat 1"
+    role: "bureaucrat"
+    parent: "minister_uat"
+    reports_to: "minister_uat"
+    tmux_session: "m_uat"
+    pane_index: 1
+
+  - id: "uat_bur2"
+    name: "UAT Bureaucrat 2"
+    role: "bureaucrat"
+    parent: "minister_uat"
+    reports_to: "minister_uat"
+    tmux_session: "m_uat"
+    pane_index: 2

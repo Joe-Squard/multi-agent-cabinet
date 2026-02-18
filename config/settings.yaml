@@ -1,0 +1,367 @@
+# Multi-Agent Cabinet System Settings v0.4.0
+
+system:
+  name: "multi-agent-cabinet"
+  version: "0.4.0"
+  base_path: "."  # Resolved relative to the repository root at runtime
+
+# Instance management
+instance_limit: 20
+default_bureaucrats: 2
+
+# tmux session names
+sessions:
+  prime_minister: "pm"
+  chief_secretary: "chief"
+  watcher: "watcher"
+  # 大臣セッションはオンデマンド: m_product, m_research, m_arch, m_fe, m_be, m_mob, m_infra, m_ai, m_qa, m_design, m_uat
+
+# Agent configuration
+agents:
+  prime_minister:
+    id: "pm"
+    cli: "claude"
+    model: "opus"
+    role: "首相 - ドメイン分析に基づきタスクを直接ルーティング"
+    always_on: true
+
+  chief_secretary:
+    id: "chief"
+    cli: "claude"
+    model: "opus"
+    role: "内閣官房長官 - 汎用/未分類タスクの実行チームリーダー"
+    always_on: true
+    bureaucrats:
+      count: 2
+      ids: ["chief_bur1", "chief_bur2"]
+      model: "sonnet"
+
+  ministers:
+    cli: "claude"
+    count: 11
+    types:
+      product:
+        name: "プロダクト大臣"
+        name_en: "Product Minister"
+        id: "minister_product"
+        type_key: "product"
+        tmux_session: "m_product"
+        instruction: "minister_product"
+        tools_dir: "tools/product"
+        model: "opus"
+        bureaucrats: ["product_bur1", "product_bur2"]
+        keywords:
+          - "PRD"
+          - "要件分析"
+          - "ユーザーストーリー"
+          - "ペルソナ"
+          - "ロードマップ"
+          - "優先度"
+          - "スコープ"
+          - "MVP"
+          - "KPI"
+          - "プロダクト"
+          - "仕様書"
+          - "ユースケース"
+          - "機能要件"
+          - "受入条件"
+
+      research:
+        name: "リサーチ大臣"
+        name_en: "Research Minister"
+        id: "minister_research"
+        type_key: "research"
+        tmux_session: "m_research"
+        instruction: "minister_research"
+        tools_dir: "tools/research"
+        model: "opus"
+        bureaucrats: ["research_bur1", "research_bur2"]
+        keywords:
+          - "調査"
+          - "リサーチ"
+          - "市場分析"
+          - "競合分析"
+          - "トレンド"
+          - "フィージビリティ"
+          - "PoC"
+          - "ベンチマーク"
+          - "技術調査"
+          - "事例"
+          - "レポート"
+          - "SWOT"
+          - "比較調査"
+          - "ユーザー調査"
+
+      architect:
+        name: "設計大臣"
+        name_en: "Architect Minister"
+        id: "minister_arch"
+        type_key: "arch"
+        tmux_session: "m_arch"
+        instruction: "minister_architect"
+        tools_dir: "tools/architect"
+        model: "opus"
+        bureaucrats: ["arch_bur1", "arch_bur2"]
+        keywords:
+          - "要件定義"
+          - "技術選定"
+          - "アーキテクチャ"
+          - "設計"
+          - "スキーマ"
+          - "ER図"
+          - "API設計"
+          - "画面遷移"
+          - "ディレクトリ構造"
+          - "プロジェクト初期化"
+          - "非機能要件"
+          - "トレードオフ"
+          - "比較検討"
+          - "スタック"
+          - "構成"
+
+      frontend:
+        name: "フロントエンド大臣"
+        name_en: "Frontend Minister"
+        id: "minister_fe"
+        type_key: "fe"
+        tmux_session: "m_fe"
+        instruction: "minister_frontend"
+        tools_dir: "tools/frontend"
+        model: "sonnet"
+        bureaucrats: ["fe_bur1", "fe_bur2"]
+        keywords:
+          - "React"
+          - "Next.js"
+          - "Vue"
+          - "コンポーネント"
+          - "CSS"
+          - "Tailwind"
+          - "UI"
+          - "フロント"
+          - "画面"
+          - "レイアウト"
+          - "スタイル"
+          - "SPA"
+          - "SSR"
+          - "SSG"
+          - "hooks"
+          - "Vite"
+          - "Webpack"
+          - "フォーム"
+          - "ページ"
+
+      backend:
+        name: "バックエンド大臣"
+        name_en: "Backend Minister"
+        id: "minister_be"
+        type_key: "be"
+        tmux_session: "m_be"
+        instruction: "minister_backend"
+        tools_dir: "tools/backend"
+        model: "sonnet"
+        bureaucrats: ["be_bur1", "be_bur2"]
+        keywords:
+          - "API"
+          - "サーバー"
+          - "バックエンド"
+          - "データベース"
+          - "DB"
+          - "SQL"
+          - "REST"
+          - "GraphQL"
+          - "認証"
+          - "マイグレーション"
+          - "ORM"
+          - "エンドポイント"
+          - "CRUD"
+          - "Prisma"
+          - "Express"
+          - "FastAPI"
+
+      mobile:
+        name: "モバイル大臣"
+        name_en: "Mobile Minister"
+        id: "minister_mob"
+        type_key: "mob"
+        tmux_session: "m_mob"
+        instruction: "minister_mobile"
+        tools_dir: "tools/mobile"
+        model: "opus"
+        bureaucrats: ["mob_bur1", "mob_bur2"]
+        keywords:
+          - "React Native"
+          - "Expo"
+          - "モバイル"
+          - "iOS"
+          - "Android"
+          - "アプリ"
+          - "ネイティブ"
+          - "ナビゲーション"
+          - "プッシュ通知"
+          - "Xcode"
+          - "Gradle"
+
+      infra:
+        name: "インフラ大臣"
+        name_en: "Infrastructure Minister"
+        id: "minister_infra"
+        type_key: "infra"
+        tmux_session: "m_infra"
+        instruction: "minister_infra"
+        tools_dir: "tools/infra"
+        model: "opus"
+        bureaucrats: ["infra_bur1", "infra_bur2"]
+        keywords:
+          - "Docker"
+          - "コンテナ"
+          - "AWS"
+          - "インフラ"
+          - "デプロイ"
+          - "CI/CD"
+          - "GitHub Actions"
+          - "Terraform"
+          - "Nginx"
+          - "SSL"
+          - "DNS"
+          - "監視"
+          - "CloudFormation"
+
+      ai:
+        name: "AI大臣"
+        name_en: "AI/Data Minister"
+        id: "minister_ai"
+        type_key: "ai"
+        tmux_session: "m_ai"
+        instruction: "minister_ai"
+        tools_dir: "tools/ai"
+        model: "opus"
+        bureaucrats: ["ai_bur1", "ai_bur2"]
+        keywords:
+          - "AI"
+          - "機械学習"
+          - "ML"
+          - "データ分析"
+          - "Python"
+          - "pandas"
+          - "PyTorch"
+          - "TensorFlow"
+          - "LLM"
+          - "プロンプト"
+          - "Jupyter"
+          - "notebook"
+          - "ベクトル"
+          - "embeddings"
+
+      qa:
+        name: "品質管理大臣"
+        name_en: "QA Minister"
+        id: "minister_qa"
+        type_key: "qa"
+        tmux_session: "m_qa"
+        instruction: "minister_qa"
+        tools_dir: "tools/qa"
+        model: "opus"
+        bureaucrats: ["qa_bur1", "qa_bur2"]
+        keywords:
+          - "テスト"
+          - "QA"
+          - "品質"
+          - "レビュー"
+          - "セキュリティ"
+          - "脆弱性"
+          - "カバレッジ"
+          - "リンター"
+          - "バグ"
+          - "リファクタリング"
+          - "E2E"
+          - "監査"
+
+      design:
+        name: "デザイン大臣"
+        name_en: "Design Minister"
+        id: "minister_design"
+        type_key: "design"
+        tmux_session: "m_design"
+        instruction: "minister_design"
+        tools_dir: "tools/design"
+        model: "opus"
+        bureaucrats: ["design_bur1", "design_bur2"]
+        keywords:
+          - "デザイン"
+          - "UI"
+          - "UX"
+          - "ワイヤーフレーム"
+          - "モックアップ"
+          - "プロトタイプ"
+          - "カラー"
+          - "配色"
+          - "タイポグラフィ"
+          - "フォント"
+          - "アイコン"
+          - "Figma"
+          - "デザインシステム"
+          - "アクセシビリティ"
+          - "a11y"
+          - "WCAG"
+          - "ダークモード"
+          - "テーマ"
+          - "レイアウト"
+          - "アニメーション"
+
+      uat:
+        name: "UAT大臣"
+        name_en: "UAT Minister"
+        id: "minister_uat"
+        type_key: "uat"
+        tmux_session: "m_uat"
+        instruction: "minister_uat"
+        tools_dir: "tools/uat"
+        model: "opus"
+        bureaucrats: ["uat_bur1", "uat_bur2"]
+        keywords:
+          - "UAT"
+          - "受入テスト"
+          - "受入条件"
+          - "手動テスト"
+          - "動作確認"
+          - "動作検証"
+          - "テストシナリオ"
+          - "テストケース"
+          - "探索的テスト"
+          - "ユーザビリティテスト"
+          - "バグレポート"
+          - "リグレッション"
+          - "リリース判定"
+          - "Go/No-Go"
+          - "クロスブラウザ"
+
+# Communication settings
+communication:
+  inbox_path: "queue/inbox"
+  tasks_path: "queue/tasks"
+  reports_path: "queue/reports"
+  watcher_timeout: 5
+
+# Memory MCP settings
+memory:
+  enabled: true
+  path: "memory"
+  file: "memory/cabinet_memory.jsonl"
+  mcp_server: "@modelcontextprotocol/server-memory"
+
+# Dashboard
+dashboard:
+  path: "dashboard.md"
+  update_interval: 10
+
+# ntfy Mobile Notifications
+ntfy:
+  enabled: false
+  topic: ""
+  server: "https://ntfy.sh"
+
+# Skill Discovery
+skills:
+  auto_discovery: true
+  save_path: "~/.claude/skills/"
+  local_path: "skills/"
