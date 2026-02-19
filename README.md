@@ -1,4 +1,4 @@
-# Multi-Agent Cabinet System v0.4.0
+# Multi-Agent Cabinet System v0.5.0
 
 **内閣制度マルチエージェントシステム** — Command your AI agents like a Japanese Cabinet.
 
@@ -54,6 +54,9 @@
 - Linux / macOS / WSL2
 - tmux
 - Claude Code CLI (`claude`)
+- Docker (記憶システムの Qdrant 用)
+- Python 3.12+ (`mcp-server-qdrant` 用)
+- Node.js 22+ (pm2 用)
 - inotify-tools (Linux) / fswatch (macOS) — なくてもポーリングで動作
 
 ### インストール
@@ -62,6 +65,12 @@
 git clone https://github.com/Joe-Squard/multi-agent-cabinet.git
 cd multi-agent-cabinet
 ./first_setup.sh
+
+# 記憶システム起動
+cd memory && docker compose up -d   # Qdrant Vector DB
+pip install mcp-server-qdrant       # MCP Server
+pm2 start ecosystem.config.cjs      # MCP Server (pm2管理)
+pm2 save
 ```
 
 ### 起動 / 停止
@@ -132,6 +141,45 @@ tmux attach-session -t m_fe
 | `m_design` | デザイン大臣 | UI/UX, デザインシステム, a11y |
 | `m_uat` | UAT大臣 | 受入テスト, バグレポート, リリース判定 |
 
+## 記憶システム（4-Layer Memory Architecture）
+
+エージェントに長期記憶と短期記憶を提供。コンテキスト汚染を防ぐ Pull 型設計。
+
+```
+┌─────────── 短期記憶 ────────────┐  ┌─────────── 長期記憶 ────────────┐
+│ L1: 個別セッション               │  │ L3: 個別 Vector DB              │
+│     memory/sessions/<id>.md      │  │     Qdrant: agent_<id>          │
+│                                  │  │                                 │
+│ L2: 共有ファイル                 │  │ L4: 共有 Vector DB              │
+│     queue/, dashboard.md         │  │     Qdrant: cabinet_shared      │
+└──────────────────────────────────┘  └─────────────────────────────────┘
+```
+
+| コンポーネント | 技術 | ポート |
+|---|---|---|
+| Vector DB | Qdrant (Docker) | 6333 |
+| MCP Server | mcp-server-qdrant (SSE, pm2) | 8000 |
+| Embedding | FastEmbed (all-MiniLM-L6-v2) | — |
+
+### 記憶プロトコル
+
+1. **起動時** — セッションファイル + タスクを読む（Qdrant検索しない）
+2. **作業中** — 必要な時だけ `qdrant-find` で検索（Pull型）
+3. **完了時** — 学んだことを `qdrant-store` で保存
+4. **Token Budget** — 1回5件まで、1タスク3回まで
+
+### コレクション分離
+
+各エージェントは自分専用のコレクション（`agent_pm`, `agent_m_fe` 等）を持ち、他エージェントのコレクションにはアクセスしません。`cabinet_shared` は全員が読み書き可能な共有知識ベースです。
+
+```bash
+# 記憶システム状態確認
+./scripts/memory_status.sh
+
+# バックアップ
+./scripts/memory_backup.sh
+```
+
 ## インスタンス管理
 
 | リソース | 数 |
@@ -192,7 +240,9 @@ multi-agent-cabinet/
 │   ├── inbox_watcher.sh       # イベント監視
 │   ├── minister_activate.sh   # 大臣チーム起動
 │   ├── minister_deactivate.sh # 大臣チーム停止
-│   └── instance_count.sh      # インスタンス数確認
+│   ├── instance_count.sh      # インスタンス数確認
+│   ├── memory_status.sh       # 記憶システム状態表示
+│   └── memory_backup.sh       # 記憶バックアップ
 ├── tools/                     # 専門大臣ツール (11カテゴリ)
 │   ├── product/               # PRDテンプレ, ユーザーストーリー生成 等
 │   ├── research/              # 競合マトリクス, 市場レポート 等
@@ -209,16 +259,25 @@ multi-agent-cabinet/
 ├── skills/                    # Claude Code スキル
 ├── lib/                       # 共通ライブラリ
 ├── queue/                     # 通信キュー (.gitignore)
-├── memory/                    # 永続化メモリ (.gitignore)
+├── .mcp.json                  # MCP サーバー設定（全エージェント共有）
+├── memory/                    # 記憶システム
+│   ├── docker-compose.yml     #   Qdrant Vector DB
+│   ├── ecosystem.config.cjs   #   MCP Server (pm2)
+│   ├── sessions/              #   エージェント別セッションメモリ
+│   ├── shared/                #   共有メモリファイル
+│   └── qdrant/                #   Qdrant データ (.gitignore)
 └── projects/                  # 作業領域 (.gitignore)
 ```
 
 ## 技術スタック
 
+- **AI CLI**: Claude Code (Opus 4.6)
 - **オーケストレーション**: tmux
 - **イベント駆動**: inotifywait / fswatch
 - **通信**: YAML ファイルベース メールボックス
-- **AI CLI**: Claude Code
+- **長期記憶**: Qdrant Vector DB + MCP Server (SSE)
+- **Embedding**: FastEmbed (all-MiniLM-L6-v2, 384次元)
+- **プロセス管理**: pm2
 - **スクリプト**: Bash
 
 ## ライセンス
