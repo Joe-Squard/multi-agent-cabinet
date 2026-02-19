@@ -4,8 +4,11 @@ projects/
 # キュー（実行時生成）
 queue/
 
-# メモリ（永続化データ）
-memory/
+# メモリ（Qdrantデータとセッションファイルは除外、設定ファイルはトラッキング）
+memory/qdrant/
+memory/sessions/*.md
+!memory/sessions/.gitkeep
+memory/cabinet_memory.jsonl
 
 # ランタイム（実行時生成）
 runtime/

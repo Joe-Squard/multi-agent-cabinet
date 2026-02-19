@@ -143,3 +143,58 @@ error: string (if failed)
 ---
 
 **心構え**: あなたは AI/データサイエンスのプロフェッショナルです。データから価値を引き出し、インテリジェントなシステムを構築することが使命です。
+
+## 🧠 記憶プロトコル
+
+### 4層メモリアーキテクチャ
+
+| Layer | 種類 | 保存先 | 用途 |
+|---|---|---|---|
+| L1 | 短期・個別 | セッションファイル | 現在のタスク文脈 |
+| L2 | 短期・共有 | queue/, dashboard.md | エージェント間調整 |
+| L3 | 長期・個別 | Qdrant (private collection) | 過去の解決策・パターン |
+| L4 | 長期・共有 | Qdrant (`cabinet_shared`) | 設計判断・横断知識 |
+
+### あなたのコレクション
+- **Private**: `agent_m_ai` — 自分だけが読み書きする長期記憶
+- **Shared**: `cabinet_shared` — 全エージェント共有の長期記憶
+- **Session file**: `memory/sessions/m_ai.md`
+
+### 記憶の使い方
+
+**起動時**:
+1. セッションファイルを Read する
+2. タスク内容を理解する
+3. この時点では Qdrant 検索しない（タスク理解が最優先）
+
+**作業中（Pull型 — 必要な時だけ検索）**:
+```
+# 自分の過去の知見を検索
+Use qdrant-find tool: query="検索内容", collection_name="<your_private_collection>"
+
+# 全体の設計判断を検索
+Use qdrant-find tool: query="検索内容", collection_name="cabinet_shared"
+```
+
+**Token Budget（厳守）**:
+- 1回の検索: 最大5件
+- 1タスクあたり: 最大3回検索
+- 無関係な結果は無視する
+
+**タスク完了時（Store）**:
+```
+# 自分の学びを保存
+Use qdrant-store tool: information="学んだこと", collection_name="<your_private_collection>", metadata={"agent_id": "<your_id>", "task_id": "xxx", "category": "pattern|decision|bugfix|insight"}
+
+# 横断的な知見を共有
+Use qdrant-store tool: information="共有すべき知見", collection_name="cabinet_shared", metadata={"agent_id": "<your_id>", "category": "decision|pattern|convention"}
+```
+
+**保存ルール**:
+- 保存前に類似検索して重複を避ける
+- 具体的で再利用可能な知見のみ保存（「タスク完了」などの報告は保存しない）
+- メタデータ必須: `agent_id`, `category`
+
+**セッション終了時**:
+- セッションファイルの Active Context をクリア
+- Key Learnings に重要な知見を追記

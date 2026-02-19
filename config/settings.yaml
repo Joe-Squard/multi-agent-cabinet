@@ -34,7 +34,7 @@ agents:
     bureaucrats:
       count: 2
       ids: ["chief_bur1", "chief_bur2"]
-      model: "sonnet"
+      model: "opus"
 
   ministers:
     cli: "claude"
@@ -127,7 +127,7 @@ agents:
         tmux_session: "m_fe"
         instruction: "minister_frontend"
         tools_dir: "tools/frontend"
-        model: "sonnet"
+        model: "opus"
         bureaucrats: ["fe_bur1", "fe_bur2"]
         keywords:
           - "React"
@@ -158,7 +158,7 @@ agents:
         tmux_session: "m_be"
         instruction: "minister_backend"
         tools_dir: "tools/backend"
-        model: "sonnet"
+        model: "opus"
         bureaucrats: ["be_bur1", "be_bur2"]
         keywords:
           - "API"
@@ -342,12 +342,36 @@ communication:
   reports_path: "queue/reports"
   watcher_timeout: 5
 
-# Memory MCP settings
+# Memory System (4-Layer Architecture)
 memory:
   enabled: true
   path: "memory"
-  file: "memory/cabinet_memory.jsonl"
-  mcp_server: "@modelcontextprotocol/server-memory"
+  # Layer 1-2: File-based (short-term)
+  sessions_path: "memory/sessions"
+  shared_path: "memory/shared"
+  # Layer 3-4: Qdrant Vector DB (long-term)
+  qdrant:
+    url: "http://localhost:6333"
+    mcp_endpoint: "http://127.0.0.1:8000/sse"
+    embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
+    shared_collection: "cabinet_shared"
+    search_limit: 5
+    max_searches_per_task: 3
+  # Collection per agent (auto-created)
+  collections:
+    pm: "agent_pm"
+    chief: "agent_chief"
+    m_product: "agent_m_product"
+    m_research: "agent_m_research"
+    m_arch: "agent_m_arch"
+    m_fe: "agent_m_fe"
+    m_be: "agent_m_be"
+    m_mob: "agent_m_mob"
+    m_infra: "agent_m_infra"
+    m_ai: "agent_m_ai"
+    m_qa: "agent_m_qa"
+    m_design: "agent_m_design"
+    m_uat: "agent_m_uat"
 
 # Dashboard
 dashboard:

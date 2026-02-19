@@ -82,6 +82,24 @@ else
     echo "⚠️  inotifywait 未インストール（ポーリングモードで動作）"
     echo "   推奨: sudo apt-get install inotify-tools"
 fi
+
+# Qdrant Vector DB チェック
+if curl -s http://localhost:6333/healthz > /dev/null 2>&1; then
+    echo "✅ Qdrant Vector DB 稼働中"
+else
+    echo "⚠️  Qdrant Vector DB が起動していません"
+    echo "   起動: cd memory && docker compose up -d"
+    echo "   記憶システムなしで続行します"
+fi
+
+# Memory MCP Server チェック
+if curl -s http://localhost:8000/sse -m 2 > /dev/null 2>&1; then
+    echo "✅ Memory MCP Server 稼働中 (SSE on :8000)"
+else
+    echo "⚠️  Memory MCP Server が起動していません"
+    echo "   起動: cd memory && pm2 start ecosystem.config.cjs"
+    echo "   記憶システムなしで続行します"
+fi
 echo ""
 
 # ========================================
