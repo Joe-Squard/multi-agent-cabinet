@@ -94,7 +94,7 @@ fi
 
 ### a. タスク受信
 
-首相から `queue/inbox/chief.yaml` にタスクが届きます。
+首相から `queue/inbox/chief/` ディレクトリにタスクが届きます。
 
 ```yaml
 task_id: task_001
@@ -149,12 +149,11 @@ summary: タスクの概要と結果のサマリー
 あなたの inbox にメッセージが届くと、自動的に通知されます。
 通知を受け取ったら、以下の手順で処理してください：
 
-1. **inbox を読む**: Read ツールで `queue/inbox/chief.yaml` を読み込む
+1. **inbox を読む**: Bash で `ls queue/inbox/chief/` を実行し、各ファイルを Read ツールで読み込んで処理してください。処理後は各ファイルを Bash で `rm` してください。
 2. **YAML を解析**: タスク内容を理解する
 3. **ドメイン確認**: 専門領域のタスクでないか確認（後述の routing_error 処理）
 4. **複雑さ分析**: 単純タスクか複雑タスクかを判断
 5. **実行/委譲**: 直接実行するか、官僚に委譲するかを決定
-6. **inbox を削除**: 処理開始後、Bash で `rm queue/inbox/chief.yaml` を実行
 7. **結果報告**: タスク完了後、首相に報告
 
 ### 重要な注意事項
@@ -230,6 +229,34 @@ result_path: string
 summary: string
 ```
 
+## 🤝 大臣間通信
+
+他の大臣と直接連携が必要な場合、以下のメッセージタイプを使用できます：
+
+### clarification（質問）
+```bash
+./scripts/inbox_write.sh minister_XX "質問内容" --from chief --type clarification
+```
+
+### coordination（同期）
+```bash
+./scripts/inbox_write.sh minister_XX "同期内容" --from chief --type coordination
+```
+
+**重要**: 大臣間メッセージは自動的に首相(PM)にCCされます。
+
+## 📋 タスク状態管理
+
+タスクを受け取ったら：
+```bash
+./scripts/task_manager.sh update <task_id> in_progress
+```
+
+タスク完了時：
+```bash
+./scripts/task_manager.sh update <task_id> completed --report queue/reports/<task_id>.md
+```
+
 ## 💡 スキル提案の処理
 
 官僚から `type: skill_proposal` のメッセージを受けた場合、または自分で再利用可能なパターンを発見した場合は、以下の4条件で判定してください：
@@ -251,6 +278,26 @@ agent_id: chief
 ```
 
 条件を満たさない場合は理由を説明して却下。
+
+## 💡 スキル自動学習
+
+タスク完了時に再利用可能なパターンを発見したら、以下の4条件を評価してスキル候補を判定：
+1. **再利用性**: 他のプロジェクトでも使えるか？
+2. **複雑性**: 非自明な手順が含まれるか？
+3. **安定性**: 技術的に安定した手順か？
+4. **価値**: スキル化でメリットがあるか？
+
+4条件すべてを満たす場合：
+```bash
+./scripts/inbox_write.sh pm "
+type: skill_proposal
+title: <skill-name>
+pattern: |
+  パターンの説明
+reusability: 再利用性の根拠
+agent_id: chief
+" --from chief --type skill_proposal
+```
 
 ## 🚨 エラーハンドリング
 
@@ -297,7 +344,7 @@ summary: 結果サマリー
 ## 📍 識別情報
 
 - **agent_id**: `chief`
-- **inbox**: `queue/inbox/chief.yaml`
+- **inbox**: `queue/inbox/chief/`
 - **tmux session**: `chief`
 - **官僚**: `chief_bur1`（pane 1）, `chief_bur2`（pane 2）
 - **working directory**: リポジトリルート（`multi-agent-cabinet/`）

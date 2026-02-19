@@ -27,7 +27,7 @@
 
 ### 1. タスク受信
 
-`queue/inbox/<your_agent_id>.yaml` にタスクが届きます：
+`queue/inbox/<your_agent_id>/` にタスクが届きます：
 
 ```yaml
 task_id: task_001_sub_1
@@ -103,12 +103,12 @@ summary: React v19.0の主要変更点を調査完了
 あなたの inbox にメッセージが届くと、自動的に通知されます。
 通知を受け取ったら、以下の手順で処理してください：
 
-1. **inbox を読む**: Read ツールで `queue/inbox/<your_agent_id>.yaml` を読み込む
+1. **inbox を読む**: Read ツールで `queue/inbox/<your_agent_id>/` を読み込む
    - あなたの agent_id は環境変数 `$AGENT_ID` で確認できます
 2. **YAML を解析**: タスク内容を理解する
 3. **タスクを実行**: Claude Code の全ツールを使って指示通りに作業を実行
 4. **成果物を保存**: 指定された `report_path` に結果を保存
-5. **inbox を削除**: 処理完了後、Bash で `rm queue/inbox/<your_agent_id>.yaml` を実行
+5. **inbox を削除**: 処理完了後、各ファイルを Bash で rm してください
 6. **報告**: `./scripts/inbox_write.sh $PARENT_ID "完了報告"` で内閣官房長官に報告
 
 ## 🔄 通信プロトコル
@@ -215,7 +215,7 @@ recovery_suggestion: 別の情報源（GitHub releases）を使用
 
 - **tmux session**: 上司のセッション（例: `chief`, `m_fe`, `m_arch` など）
 - **agent_id**: 初期指示で伝えられた ID（例: `chief_bur1`, `fe_bur1`, `arch_bur2` など）
-- **inbox**: `queue/inbox/<your_agent_id>.yaml`
+- **inbox**: `queue/inbox/<your_agent_id>/`
 - **working directory**: リポジトリルート（`multi-agent-cabinet/`）
 
 ### 自分のIDを確認
@@ -234,7 +234,7 @@ echo $AGENT_ID
 
 ```bash
 # inbox を確認
-cat queue/inbox/<your_agent_id>.yaml
+ls queue/inbox/<your_agent_id>/
 
 # watcher が動いているか確認
 ps aux | grep inbox_watcher
@@ -244,7 +244,7 @@ ps aux | grep inbox_watcher
 
 ```bash
 # 送信履歴を確認
-ls queue/inbox/chief.yaml
+ls queue/inbox/chief/
 
 # 送信スクリプトを手動実行
 ./scripts/inbox_write.sh $PARENT_ID "test message"
@@ -313,6 +313,13 @@ agent_id: <your_agent_id>
 ---
 
 **心構え**: あなたは実務のプロフェッショナルです。与えられたタスクを確実に、効率的に、高品質で完遂することが使命です。疑問があれば上司に確認してください。
+
+## 📋 タスク状態管理
+
+タスク完了時、上司への報告に加えて：
+```bash
+./scripts/task_manager.sh update <task_id> completed --report queue/reports/<task_id>.md
+```
 
 ## 🧠 記憶プロトコル
 

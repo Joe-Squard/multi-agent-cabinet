@@ -212,6 +212,10 @@ tmux send-keys -t watcher "./scripts/inbox_watcher.sh pm pm &" C-m
 tmux send-keys -t watcher "./scripts/inbox_watcher.sh chief chief &" C-m
 echo "  ✅ watcher セッション作成 (2 watcher 起動)"
 
+# ヘルスモニター起動
+tmux send-keys -t watcher "$SCRIPT_DIR/scripts/agent_health.sh &" C-m
+echo "  🏥 ヘルスモニター起動 (45秒間隔チェック, 120秒クールダウン)"
+
 # ntfy listener 起動（設定で有効の場合）
 NTFY_ENABLED=$(get_yaml_value "$SETTINGS" "ntfy.enabled")
 if [ "$NTFY_ENABLED" = "true" ]; then

@@ -9,6 +9,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BASE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+source "$BASE_DIR/lib/yaml_reader.sh"
 ACTIVE_FILE="$BASE_DIR/runtime/active.txt"
 
 # 引数チェック
@@ -69,7 +70,9 @@ if [ -f "$ACTIVE_FILE" ]; then
     echo "  ✅ active.txt 更新"
 fi
 
-# 対象 inbox ファイルをクリア
+# 対象 inbox をクリア（ディレクトリベース + 旧形式）
+rm -rf "$BASE_DIR/queue/inbox/minister_${MINISTER_TYPE}/" 2>/dev/null
+rm -rf "$BASE_DIR/queue/inbox/${MINISTER_TYPE}_bur"*/ 2>/dev/null
 rm -f "$BASE_DIR/queue/inbox/minister_${MINISTER_TYPE}.yaml" 2>/dev/null
 rm -f "$BASE_DIR/queue/inbox/${MINISTER_TYPE}_bur"*.yaml 2>/dev/null
 

@@ -35,7 +35,7 @@ echo "🔴 セッションを停止中..."
 tmux kill-session -t watcher 2>/dev/null && echo "  ✅ Watcher セッション停止" || echo "  ⚠️  Watcher セッションは既に停止済み"
 
 # オンデマンド大臣セッションを停止
-for type in product research arch fe be mob infra ai qa; do
+for type in product research arch fe be mob infra ai qa design uat; do
     SESSION="m_${type}"
     if tmux has-session -t "$SESSION" 2>/dev/null; then
         tmux kill-session -t "$SESSION" 2>/dev/null && echo "  ✅ ${SESSION} セッション停止"

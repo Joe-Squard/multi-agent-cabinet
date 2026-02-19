@@ -151,14 +151,15 @@ case "$ROLE" in
 
 基本情報:
 - agent_id: pm
-- inbox: queue/inbox/pm.yaml
+- inbox: queue/inbox/pm/ （ディレクトリ内に .yaml ファイルが届きます）
 - 作業ディレクトリ: $BASE_DIR
 
 あなたはドメイン分析に基づき、専門大臣または内閣官房長官にタスクをルーティングします。
 大臣はオンデマンドで起動します: ./scripts/minister_activate.sh <type>
 インスタンス確認: ./scripts/instance_count.sh
+タスク管理: ./scripts/task_manager.sh create|update|list|get|dashboard
 
-メッセージが届くと自動通知されます。通知を受けたら Read ツールで inbox を読み込んで処理してください。処理後は Bash で rm queue/inbox/pm.yaml を実行してください。
+メッセージが届くと自動通知されます。通知を受けたら Bash で ls queue/inbox/pm/ を実行し、各ファイルを Read ツールで読み込んで処理してください。処理後は各ファイルを Bash で rm してください。
 
 短く確認の返答をしてください。"
         ;;
@@ -169,17 +170,17 @@ case "$ROLE" in
 
 基本情報:
 - agent_id: chief
-- inbox: queue/inbox/chief.yaml
+- inbox: queue/inbox/chief/ （ディレクトリ内に .yaml ファイルが届きます）
 - 作業ディレクトリ: $BASE_DIR
 - 配下官僚: chief_bur1, chief_bur2（オンデマンド）
 
 あなたは専門大臣と同格のチームリーダーです。首相から割り当てられた汎用/未分類タスクを実行します。
 複雑なタスクは配下の官僚に委譲してください。
 
-メッセージが届くと自動通知されます。通知を受けたら Read ツールで inbox を読み込んで処理してください。処理後は Bash で rm queue/inbox/chief.yaml を実行してください。
+メッセージが届くと自動通知されます。通知を受けたら Bash で ls queue/inbox/chief/ を実行し、各ファイルを Read ツールで読み込んで処理してください。処理後は各ファイルを Bash で rm してください。
 
-官僚へのタスク送信: ./scripts/inbox_write.sh chief_bur1 \"メッセージ\"
-首相への報告: ./scripts/inbox_write.sh pm \"メッセージ\"
+官僚へのタスク送信: ./scripts/inbox_write.sh chief_bur1 \"メッセージ\" --from chief
+首相への報告: ./scripts/inbox_write.sh pm \"メッセージ\" --from chief --type report
 
 短く確認の返答をしてください。"
         ;;
@@ -193,18 +194,20 @@ case "$ROLE" in
 
 基本情報:
 - agent_id: ${AGENT_ID}
-- inbox: queue/inbox/${AGENT_ID}.yaml
+- inbox: queue/inbox/${AGENT_ID}/ （ディレクトリ内に .yaml ファイルが届きます）
 - 作業ディレクトリ: $BASE_DIR
 - 専用ツール: ${TOOLS_DIR}/
 - 配下官僚: ${TYPE_KEY}_bur1, ${TYPE_KEY}_bur2
 
 あなたは首相(PM)に直接報告するチームリーダーです。
 シンプルなタスクは自分で実行、複雑なタスクは官僚に委譲してください。
+他の大臣に直接質問・同期も可能です（--type clarification/coordination）。
 
-メッセージが届くと自動通知されます。通知を受けたら Read ツールで inbox を読み込んで処理してください。処理後は Bash で rm queue/inbox/${AGENT_ID}.yaml を実行してください。
+メッセージが届くと自動通知されます。通知を受けたら Bash で ls queue/inbox/${AGENT_ID}/ を実行し、各ファイルを Read ツールで読み込んで処理してください。処理後は各ファイルを Bash で rm してください。
 
-官僚へのタスク送信: ./scripts/inbox_write.sh ${TYPE_KEY}_bur1 \"メッセージ\"
-首相への報告: ./scripts/inbox_write.sh pm \"メッセージ\"
+官僚へのタスク送信: ./scripts/inbox_write.sh ${TYPE_KEY}_bur1 \"メッセージ\" --from ${AGENT_ID}
+首相への報告: ./scripts/inbox_write.sh pm \"メッセージ\" --from ${AGENT_ID} --type report
+他大臣への質問: ./scripts/inbox_write.sh minister_XX \"質問\" --from ${AGENT_ID} --type clarification
 
 短く確認の返答をしてください。"
         ;;
@@ -223,15 +226,15 @@ case "$ROLE" in
 
 基本情報:
 - agent_id: ${AGENT_ID}
-- inbox: queue/inbox/${AGENT_ID}.yaml
+- inbox: queue/inbox/${AGENT_ID}/ （ディレクトリ内に .yaml ファイルが届きます）
 - 上司: ${PARENT_ID}
 - 作業ディレクトリ: $BASE_DIR
 
 あなたの上司は ${PARENT_ID} です。タスク完了後は上司に報告してください。
 
-メッセージが届くと自動通知されます。通知を受けたら Read ツールで inbox を読み込んで処理してください。処理後は Bash で rm queue/inbox/${AGENT_ID}.yaml を実行してください。
+メッセージが届くと自動通知されます。通知を受けたら Bash で ls queue/inbox/${AGENT_ID}/ を実行し、各ファイルを Read ツールで読み込んで処理してください。処理後は各ファイルを Bash で rm してください。
 
-上司への報告: ./scripts/inbox_write.sh ${PARENT_ID} \"メッセージ\"
+上司への報告: ./scripts/inbox_write.sh ${PARENT_ID} \"メッセージ\" --from ${AGENT_ID} --type report
 
 短く確認の返答をしてください。"
         ;;
@@ -243,10 +246,10 @@ case "$ROLE" in
 
 基本情報:
 - agent_id: ${AGENT_ID}
-- inbox: queue/inbox/${AGENT_ID}.yaml
+- inbox: queue/inbox/${AGENT_ID}/ （ディレクトリ内に .yaml ファイルが届きます）
 - 作業ディレクトリ: $BASE_DIR
 
-メッセージが届くと自動通知されます。通知を受けたら Read ツールで inbox を読み込んで処理してください。処理後は Bash で rm queue/inbox/${AGENT_ID}.yaml を実行してください。
+メッセージが届くと自動通知されます。通知を受けたら Bash で ls queue/inbox/${AGENT_ID}/ を実行し、各ファイルを Read ツールで読み込んで処理してください。処理後は各ファイルを Bash で rm してください。
 
 短く確認の返答をしてください。"
         ;;

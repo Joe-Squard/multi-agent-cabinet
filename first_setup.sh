@@ -165,27 +165,46 @@ fi
 # ========================================
 # 6. Memory MCP セットアップ
 # ========================================
-echo "🧠 Memory MCP をチェック中..."
+echo "🧠 Qdrant 記憶システムをチェック中..."
 echo ""
 
-if command -v claude &> /dev/null; then
-    if claude mcp list 2>/dev/null | grep -q "memory"; then
-        echo "  ✅ Memory MCP は既に設定済みです"
-    else
-        echo "  🧠 Memory MCP をセットアップ中..."
-        mkdir -p memory
-        if claude mcp add memory \
-            -e MEMORY_FILE_PATH="$SCRIPT_DIR/memory/cabinet_memory.jsonl" \
-            -- npx -y @modelcontextprotocol/server-memory 2>/dev/null; then
-            echo "  ✅ Memory MCP セットアップ完了"
-        else
-            echo "  ⚠️  Memory MCP のセットアップに失敗（後で手動セットアップ可能）"
-            echo "     コマンド: claude mcp add memory -e MEMORY_FILE_PATH=\"$SCRIPT_DIR/memory/cabinet_memory.jsonl\" -- npx -y @modelcontextprotocol/server-memory"
-        fi
-    fi
+# Docker チェック
+if command -v docker &> /dev/null; then
+    echo "  ✅ Docker: $(docker --version 2>/dev/null | head -1)"
 else
-    echo "  ⚠️  Claude Code が未インストールのため Memory MCP をスキップ"
+    echo "  ⚠️  Docker が見つかりません（記憶システムの Qdrant に必要）"
+    echo "     インストール: https://docs.docker.com/get-docker/"
 fi
+
+# mcp-server-qdrant チェック
+if command -v mcp-server-qdrant &> /dev/null || pip3 show mcp-server-qdrant &> /dev/null 2>&1; then
+    echo "  ✅ mcp-server-qdrant: インストール済み"
+else
+    echo "  ⚠️  mcp-server-qdrant が見つかりません"
+    echo "     インストール: pip install mcp-server-qdrant"
+fi
+
+# pm2 チェック
+if command -v pm2 &> /dev/null; then
+    echo "  ✅ pm2: $(pm2 --version 2>/dev/null)"
+else
+    echo "  ⚠️  pm2 が見つかりません（MCP Server 管理に使用）"
+    echo "     インストール: npm install -g pm2"
+fi
+
+# .mcp.json チェック
+if [ -f "$SCRIPT_DIR/.mcp.json" ]; then
+    echo "  ✅ .mcp.json: 存在"
+else
+    echo "  ⚠️  .mcp.json が見つかりません（MCP サーバー自動接続設定）"
+fi
+
+echo ""
+echo "  📖 記憶システムの起動方法:"
+echo "     cd memory && docker compose up -d         # Qdrant Vector DB"
+echo "     pip install mcp-server-qdrant             # MCP Server インストール"
+echo "     cd memory && pm2 start ecosystem.config.cjs  # MCP Server 起動"
+echo "     pm2 save                                  # 永続化"
 
 echo ""
 

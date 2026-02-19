@@ -32,7 +32,22 @@ if [ $# -lt 1 ]; then
 fi
 
 MINISTER_TYPE="$1"
-BUR_COUNT="${2:-$DEFAULT_BUREAUCRATS}"
+shift
+
+# オプション解析
+OVERRIDE_MODEL=""
+OVERRIDE_BUR_MODEL=""
+POSITIONAL_BUR_COUNT=""
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --model)     OVERRIDE_MODEL="$2"; shift 2 ;;
+        --bur-model) OVERRIDE_BUR_MODEL="$2"; shift 2 ;;
+        *)           POSITIONAL_BUR_COUNT="$1"; shift ;;
+    esac
+done
+
+BUR_COUNT="${POSITIONAL_BUR_COUNT:-$DEFAULT_BUREAUCRATS}"
 SESSION_NAME="m_${MINISTER_TYPE}"
 
 # 大臣タイプ → 設定マッピング
@@ -118,6 +133,16 @@ LABEL="${MINISTER_LABELS[$MINISTER_TYPE]}"
 MODEL="${MINISTER_MODELS[$MINISTER_TYPE]}"
 INSTRUCTION="${MINISTER_INSTRUCTION[$MINISTER_TYPE]}"
 
+# オプションによるモデル上書き
+[ -n "$OVERRIDE_MODEL" ] && MODEL="$OVERRIDE_MODEL"
+
+# 官僚モデル: --bur-model > settings.yaml bureaucrat_model > "sonnet"
+if [ -n "$OVERRIDE_BUR_MODEL" ]; then
+    BUR_MODEL="$OVERRIDE_BUR_MODEL"
+else
+    BUR_MODEL=$(get_yaml_value "$SETTINGS" "agents.ministers.types.${MINISTER_TYPE}.bureaucrat_model" 2>/dev/null || echo "sonnet")
+fi
+
 # 既に起動中か確認
 if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
     echo "✅ ${LABEL} ($SESSION_NAME) は既に起動中です"
@@ -201,8 +226,8 @@ BUR_PIDS=()
 for i in $(seq 1 "$BUR_COUNT"); do
     sleep 3
     BUR_ID="${MINISTER_TYPE}_bur${i}"
-    echo "  --- 官僚 $BUR_ID [model: opus] ---"
-    "$SCRIPT_DIR/agent_launch.sh" "${SESSION_NAME}:0.${i}" "$BUR_ID" "minister_bureaucrat" "opus" &
+    echo "  --- 官僚 $BUR_ID [model: $BUR_MODEL] ---"
+    "$SCRIPT_DIR/agent_launch.sh" "${SESSION_NAME}:0.${i}" "$BUR_ID" "minister_bureaucrat" "$BUR_MODEL" &
     BUR_PIDS+=($!)
 done
 

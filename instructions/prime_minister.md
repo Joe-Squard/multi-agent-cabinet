@@ -241,10 +241,9 @@ report_path: queue/reports/task_001.md
 あなたの inbox にメッセージが届くと、自動的に通知されます。
 通知を受け取ったら、以下の手順で処理してください：
 
-1. **inbox を読む**: Read ツールで `queue/inbox/pm.yaml` を読み込む
+1. **inbox を読む**: Bash で `ls queue/inbox/pm/` を実行し、各ファイルを Read ツールで読み込んで処理してください。処理後は各ファイルを Bash で `rm` してください。
 2. **YAML を解析**: メッセージ内容を理解する（通常は大臣からの報告）
 3. **処理**: 報告内容を確認し、必要に応じて追加指示を出す
-4. **inbox を削除**: 処理完了後、Bash で `rm queue/inbox/pm.yaml` を実行
 5. **天皇に報告**: 必要に応じて結果を天皇に報告
 
 ### 重要な注意事項
@@ -295,6 +294,39 @@ subtasks:
 
 簡潔でわかりやすい日本語で報告。
 
+## 📋 タスク状態管理
+
+タスクの作成・追跡に `task_manager.sh` を使用してください。
+
+### タスク作成（ルーティング時）
+
+```bash
+# タスク作成
+./scripts/task_manager.sh create <task_id> <assigned_to> "<title>" <priority>
+
+# メッセージ送信
+./scripts/inbox_write.sh <agent_id> "task_id: <task_id>..." --from pm --type task
+```
+
+### タスク更新（報告受信時）
+
+```bash
+./scripts/task_manager.sh update <task_id> completed --report queue/reports/<task_id>.md
+```
+
+### ダッシュボード更新
+
+```bash
+./scripts/task_manager.sh dashboard
+```
+
+### ステータス一覧
+
+```bash
+./scripts/task_manager.sh list
+./scripts/task_manager.sh list --status in_progress
+```
+
 ## 📊 ダッシュボード管理
 
 `dashboard.md` に進捗を記録：
@@ -324,6 +356,27 @@ subtasks:
 | minister_uat | UAT大臣 | 非アクティブ | - |
 ```
 
+## 🤖 モデル選択ガイドライン
+
+大臣起動時にタスクの性質に応じてモデルを選択できます。
+
+| タスクの性質 | 大臣モデル | 官僚モデル | 起動例 |
+|---|---|---|---|
+| 設計判断・アーキテクチャ | opus | opus | `./scripts/minister_activate.sh arch --bur-model opus` |
+| 実装・コーディング | opus | sonnet | `./scripts/minister_activate.sh fe` (デフォルト) |
+| 単純作業・フォーマット | sonnet | sonnet | `./scripts/minister_activate.sh fe --model sonnet --bur-model sonnet` |
+
+デフォルト: 大臣=opus, 官僚=sonnet
+
+## 🤝 大臣間通信の監視
+
+大臣同士が `--type clarification` や `--type coordination` で直接メッセージを送信すると、自動的にあなた(PM)の inbox にCCが届きます。
+
+### CC メッセージの処理
+- `type: cc_clarification` — 大臣間の質問。基本的に静観。
+- `type: cc_coordination` — 大臣間の同期。進捗把握に活用。
+- 問題を検出した場合のみ介入してください。
+
 ## 🧠 Memory MCP（セッション間記憶）
 
 Memory MCP が設定されている場合、以下のルールで記憶を管理してください。
@@ -345,9 +398,11 @@ Memory MCP が設定されている場合、以下のルールで記憶を管理
 
 ## 💡 スキル承認フロー
 
-1. 大臣からスキル提案（`type: skill_proposal`）を受けたら dashboard.md に承認依頼を記載
-2. 天皇（ユーザー）が承認したら、該当大臣に作成を指示
-3. `skills/skill-creator/SKILL.md` のテンプレートに従ってスキルを作成
+大臣から `type: skill_proposal` メッセージが届いた場合：
+
+1. 4条件を確認（再利用性・複雑性・安定性・価値）
+2. **承認**: `./scripts/skill_register.sh <skill-name> "<description>"` でテンプレート作成し、提案元に作成指示
+3. **却下**: 理由を添えて提案元に返信
 
 ## 📱 ntfy（モバイル通知）
 
@@ -412,7 +467,7 @@ tmux has-session -t m_<type> 2>/dev/null && echo "active" || echo "inactive"
 
 - **tmux session**: `pm`
 - **agent_id**: `pm`
-- **inbox**: `queue/inbox/pm.yaml`
+- **inbox**: `queue/inbox/pm/`
 - **working directory**: リポジトリルート（`multi-agent-cabinet/`）
 
 ---

@@ -1,4 +1,4 @@
-# Multi-Agent Cabinet System v0.5.0
+# Multi-Agent Cabinet System v0.6.0
 
 **内閣制度マルチエージェントシステム** — Command your AI agents like a Japanese Cabinet.
 
@@ -200,23 +200,57 @@ tmux attach-session -t m_fe
 
 ## 通信プロトコル
 
-ファイルベースの YAML メールボックスと `inotifywait` によるイベント駆動通信。
+ディレクトリベースの YAML キューと `inotifywait` によるイベント駆動通信。大臣間の直接通信にも対応。
 
 ```bash
 # メッセージ送信
 ./scripts/inbox_write.sh <agent_id> "<message>"
+
+# 大臣間通信（自動で PM に CC）
+./scripts/inbox_write.sh minister_be "API仕様確認" --from minister_fe --type clarification
 ```
 
 ```yaml
 ---
-timestamp: 2026-02-08T21:30:00Z
+timestamp: 2026-02-19T10:00:00+09:00
 from: pm
+type: task
 message: |
   task_id: task_001
   title: タスクタイトル
   priority: high
   assigned_to: minister_fe
 ```
+
+## v0.6.0 新機能
+
+### エージェント自動復旧
+tmux ペイン内の Claude が死亡した場合、45秒以内に自動検知・再起動。120秒のクールダウンで再起動ストームを防止。
+
+### タスク状態管理
+```bash
+./scripts/task_manager.sh create task_001 minister_fe "React実装" high
+./scripts/task_manager.sh update task_001 in_progress
+./scripts/task_manager.sh list --status in_progress
+./scripts/task_manager.sh dashboard
+```
+
+### 動的モデル選択
+大臣=Opus、官僚=Sonnet がデフォルト。タスク複雑度に応じて起動時に変更可能。
+```bash
+./scripts/minister_activate.sh fe                          # 大臣opus, 官僚sonnet
+./scripts/minister_activate.sh fe --bur-model opus         # 全員opus
+./scripts/minister_activate.sh fe --model sonnet           # 全員sonnet
+```
+
+### 記憶コンパクション
+```bash
+./scripts/memory_compact.sh --dry-run   # 事前確認
+./scripts/memory_compact.sh             # 古いポイント削除
+```
+
+### スキル自動学習
+大臣がタスク完了時に再利用可能パターンを検出 → PM に提案 → 承認後スキル化。
 
 ## ディレクトリ構成
 
@@ -236,11 +270,15 @@ multi-agent-cabinet/
 │   ├── bureaucrat.md
 │   └── minister_*.md          # 各大臣の指示書
 ├── scripts/                   # 通信・制御スクリプト
-│   ├── inbox_write.sh         # メッセージ送信
-│   ├── inbox_watcher.sh       # イベント監視
-│   ├── minister_activate.sh   # 大臣チーム起動
+│   ├── inbox_write.sh         # メッセージ送信（キューベース）
+│   ├── inbox_watcher.sh       # イベント監視（ディレクトリベース）
+│   ├── minister_activate.sh   # 大臣チーム起動（動的モデル選択対応）
 │   ├── minister_deactivate.sh # 大臣チーム停止
 │   ├── instance_count.sh      # インスタンス数確認
+│   ├── task_manager.sh        # タスク状態管理
+│   ├── agent_health.sh        # エージェント死活監視 & 自動復旧
+│   ├── memory_compact.sh      # Qdrant コレクション圧縮
+│   ├── skill_register.sh      # スキル登録
 │   ├── memory_status.sh       # 記憶システム状態表示
 │   └── memory_backup.sh       # 記憶バックアップ
 ├── tools/                     # 専門大臣ツール (11カテゴリ)

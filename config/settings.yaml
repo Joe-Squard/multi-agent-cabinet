@@ -34,7 +34,7 @@ agents:
     bureaucrats:
       count: 2
       ids: ["chief_bur1", "chief_bur2"]
-      model: "opus"
+      model: "sonnet"
 
   ministers:
     cli: "claude"
@@ -49,6 +49,7 @@ agents:
         instruction: "minister_product"
         tools_dir: "tools/product"
         model: "opus"
+        bureaucrat_model: "sonnet"
         bureaucrats: ["product_bur1", "product_bur2"]
         keywords:
           - "PRD"
@@ -75,6 +76,7 @@ agents:
         instruction: "minister_research"
         tools_dir: "tools/research"
         model: "opus"
+        bureaucrat_model: "sonnet"
         bureaucrats: ["research_bur1", "research_bur2"]
         keywords:
           - "調査"
@@ -101,6 +103,7 @@ agents:
         instruction: "minister_architect"
         tools_dir: "tools/architect"
         model: "opus"
+        bureaucrat_model: "sonnet"
         bureaucrats: ["arch_bur1", "arch_bur2"]
         keywords:
           - "要件定義"
@@ -128,6 +131,7 @@ agents:
         instruction: "minister_frontend"
         tools_dir: "tools/frontend"
         model: "opus"
+        bureaucrat_model: "sonnet"
         bureaucrats: ["fe_bur1", "fe_bur2"]
         keywords:
           - "React"
@@ -159,6 +163,7 @@ agents:
         instruction: "minister_backend"
         tools_dir: "tools/backend"
         model: "opus"
+        bureaucrat_model: "sonnet"
         bureaucrats: ["be_bur1", "be_bur2"]
         keywords:
           - "API"
@@ -187,6 +192,7 @@ agents:
         instruction: "minister_mobile"
         tools_dir: "tools/mobile"
         model: "opus"
+        bureaucrat_model: "sonnet"
         bureaucrats: ["mob_bur1", "mob_bur2"]
         keywords:
           - "React Native"
@@ -210,6 +216,7 @@ agents:
         instruction: "minister_infra"
         tools_dir: "tools/infra"
         model: "opus"
+        bureaucrat_model: "sonnet"
         bureaucrats: ["infra_bur1", "infra_bur2"]
         keywords:
           - "Docker"
@@ -235,6 +242,7 @@ agents:
         instruction: "minister_ai"
         tools_dir: "tools/ai"
         model: "opus"
+        bureaucrat_model: "sonnet"
         bureaucrats: ["ai_bur1", "ai_bur2"]
         keywords:
           - "AI"
@@ -261,6 +269,7 @@ agents:
         instruction: "minister_qa"
         tools_dir: "tools/qa"
         model: "opus"
+        bureaucrat_model: "sonnet"
         bureaucrats: ["qa_bur1", "qa_bur2"]
         keywords:
           - "テスト"
@@ -285,6 +294,7 @@ agents:
         instruction: "minister_design"
         tools_dir: "tools/design"
         model: "opus"
+        bureaucrat_model: "sonnet"
         bureaucrats: ["design_bur1", "design_bur2"]
         keywords:
           - "デザイン"
@@ -317,6 +327,7 @@ agents:
         instruction: "minister_uat"
         tools_dir: "tools/uat"
         model: "opus"
+        bureaucrat_model: "sonnet"
         bureaucrats: ["uat_bur1", "uat_bur2"]
         keywords:
           - "UAT"
@@ -357,6 +368,12 @@ memory:
     shared_collection: "cabinet_shared"
     search_limit: 5
     max_searches_per_task: 3
+  # Memory compaction
+  compaction:
+    private_max_points: 500
+    shared_max_points: 1000
+    similarity_threshold: 0.95
+    schedule: "manual"  # manual | weekly
   # Collection per agent (auto-created)
   collections:
     pm: "agent_pm"
