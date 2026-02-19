@@ -96,8 +96,8 @@ declare -A MINISTER_MODELS=(
     ["product"]="opus"
     ["research"]="opus"
     ["arch"]="opus"
-    ["fe"]="sonnet"
-    ["be"]="sonnet"
+    ["fe"]="opus"
+    ["be"]="opus"
     ["mob"]="opus"
     ["infra"]="opus"
     ["ai"]="opus"
@@ -201,8 +201,8 @@ BUR_PIDS=()
 for i in $(seq 1 "$BUR_COUNT"); do
     sleep 3
     BUR_ID="${MINISTER_TYPE}_bur${i}"
-    echo "  --- 官僚 $BUR_ID [model: sonnet] ---"
-    "$SCRIPT_DIR/agent_launch.sh" "${SESSION_NAME}:0.${i}" "$BUR_ID" "minister_bureaucrat" "sonnet" &
+    echo "  --- 官僚 $BUR_ID [model: opus] ---"
+    "$SCRIPT_DIR/agent_launch.sh" "${SESSION_NAME}:0.${i}" "$BUR_ID" "minister_bureaucrat" "opus" &
     BUR_PIDS+=($!)
 done
 

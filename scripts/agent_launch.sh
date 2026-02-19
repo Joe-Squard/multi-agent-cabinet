@@ -4,8 +4,8 @@
 # 例:
 #   ./scripts/agent_launch.sh pm pm prime_minister opus
 #   ./scripts/agent_launch.sh chief chief chief_secretary opus
-#   ./scripts/agent_launch.sh m_fe:0.0 minister_fe minister_leader sonnet
-#   ./scripts/agent_launch.sh m_fe:0.1 fe_bur1 minister_bureaucrat sonnet
+#   ./scripts/agent_launch.sh m_fe:0.0 minister_fe minister_leader opus
+#   ./scripts/agent_launch.sh m_fe:0.1 fe_bur1 minister_bureaucrat opus
 
 set -euo pipefail
 
