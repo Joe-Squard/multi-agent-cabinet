@@ -156,7 +156,7 @@ if [ -n "$OVERRIDE_BUR_MODEL" ]; then
     BUR_MODEL="$OVERRIDE_BUR_MODEL"
 else
     YAML_KEY="${MINISTER_YAML_KEYS[$MINISTER_TYPE]}"
-    BUR_MODEL=$(get_yaml_value "$SETTINGS" "agents.ministers.types.${YAML_KEY}.bureaucrat_model" 2>/dev/null || echo "sonnet")
+    BUR_MODEL=$(get_yaml_value "$SETTINGS" "agents.ministers.types.${YAML_KEY}.bureaucrat_model" 2>/dev/null || echo "opus")
 fi
 
 # 既に起動中か確認
