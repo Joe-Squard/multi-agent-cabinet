@@ -121,6 +121,21 @@ declare -A MINISTER_MODELS=(
     ["uat"]="opus"
 )
 
+# 短縮キー → settings.yaml の YAML キー名
+declare -A MINISTER_YAML_KEYS=(
+    ["product"]="product"
+    ["research"]="research"
+    ["arch"]="architect"
+    ["fe"]="frontend"
+    ["be"]="backend"
+    ["mob"]="mobile"
+    ["infra"]="infra"
+    ["ai"]="ai"
+    ["qa"]="qa"
+    ["design"]="design"
+    ["uat"]="uat"
+)
+
 # タイプ検証
 if [ -z "${MINISTER_IDS[$MINISTER_TYPE]+x}" ]; then
     echo "ERROR: 不明な大臣タイプ: $MINISTER_TYPE" >&2
@@ -140,7 +155,8 @@ INSTRUCTION="${MINISTER_INSTRUCTION[$MINISTER_TYPE]}"
 if [ -n "$OVERRIDE_BUR_MODEL" ]; then
     BUR_MODEL="$OVERRIDE_BUR_MODEL"
 else
-    BUR_MODEL=$(get_yaml_value "$SETTINGS" "agents.ministers.types.${MINISTER_TYPE}.bureaucrat_model" 2>/dev/null || echo "sonnet")
+    YAML_KEY="${MINISTER_YAML_KEYS[$MINISTER_TYPE]}"
+    BUR_MODEL=$(get_yaml_value "$SETTINGS" "agents.ministers.types.${YAML_KEY}.bureaucrat_model" 2>/dev/null || echo "sonnet")
 fi
 
 # 既に起動中か確認
