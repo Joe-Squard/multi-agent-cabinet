@@ -1,0 +1,87 @@
+# 開発統制 フェーズ別デフォルト設定
+# hooks/lib/project_phase.sh および各 Hook から参照される
+
+# フェーズ別強制レベル
+phases:
+  genesis:
+    level: "L2"
+    description: "提案のみ — 最大の開発速度"
+    branch_strategy: "main直接コミット可"
+    worktree_required: false
+    tdd_required: false
+    review_required: false
+    self_review_required: false
+    conventional_commits: false
+    release_spec_required: false
+
+  growth:
+    level: "L4"
+    description: "警告 — 品質と速度のバランス"
+    branch_strategy: "main←develop←feature/*"
+    worktree_required: true
+    tdd_required: true
+    review_required: true
+    self_review_required: false    # 推奨だが強制しない
+    conventional_commits: true     # 警告レベル
+    release_spec_required: true
+    cross_review: false
+
+  maintenance:
+    level: "L5"
+    description: "ブロック — 品質最優先"
+    branch_strategy: "main←develop←feature/*,release/*,hotfix/*"
+    worktree_required: true
+    tdd_required: true
+    review_required: true
+    self_review_required: true     # 必須
+    conventional_commits: true     # ブロックレベル
+    release_spec_required: true
+    cross_review: true
+    debate_partner: true
+
+# フェーズ遷移ガイドライン
+transition_guidelines:
+  genesis_to_growth:
+    checklist:
+      - "MVP が動作する状態である"
+      - "ユーザー（天皇）に公開可能な品質である"
+      - "主要機能が一通り実装されている"
+      - "テスト基盤が整っている（テストランナー設定済み）"
+    actions:
+      - "develop ブランチを作成"
+      - "大臣別 worktree をセットアップ"
+      - "QA 大臣を有効化"
+
+  growth_to_maintenance:
+    checklist:
+      - "リリースが安定している（週次リリース可能）"
+      - "破壊的変更の頻度が減少している"
+      - "SLA やパフォーマンス要件が存在する"
+      - "ユーザーが日常的に利用している"
+    actions:
+      - "release/* ブランチ戦略を有効化"
+      - "セルフレビューを必須化"
+      - "クロス大臣レビューを有効化"
+      - "Debate Partner を有効化"
+
+# QA スケーリング設定
+scaling:
+  qa:
+    enabled: true
+    max_sessions: 3
+    trigger_threshold: 3
+    cooldown_seconds: 300
+
+# Conventional Commit プレフィックス
+conventional_commits:
+  allowed_prefixes:
+    - "feat"
+    - "fix"
+    - "refactor"
+    - "test"
+    - "docs"
+    - "style"
+    - "perf"
+    - "chore"
+    - "ci"
+    - "build"

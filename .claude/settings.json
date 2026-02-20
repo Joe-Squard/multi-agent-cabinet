@@ -1,0 +1,50 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "command": "bash hooks/branch-reminder.sh",
+        "description": "ブランチ作成リマインダー: Growth/Maintenance で実装キーワード検出時にブランチ作成を提案"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "command": "bash hooks/worktree-guard.sh",
+        "description": "Worktree Guard: Growth/Maintenance でメインworktreeへの直接編集をブロック"
+      },
+      {
+        "matcher": "Bash",
+        "command": "bash hooks/commit-guard.sh",
+        "description": "Commit Guard: 危険なgit操作をブロック（--no-verify, force push, 非conventional commit）"
+      },
+      {
+        "matcher": "Bash",
+        "command": "bash hooks/gh-guard.sh",
+        "description": "GH Guard: PR自己承認・main直接マージを防止"
+      }
+    ],
+    "SubagentStart": [
+      {
+        "command": "bash hooks/subagent-inject.sh",
+        "description": "SubAgent Inject: 官僚にTDD/worktreeルールをコンテキスト注入"
+      }
+    ],
+    "Stop": [
+      {
+        "command": "bash hooks/review-enforcement.sh",
+        "description": "Review Gate: PMのみ - 未レビューブランチがあれば終了をブロック"
+      },
+      {
+        "command": "bash hooks/release-completion.sh",
+        "description": "Release Gate: PMのみ - 未完了リリースがあれば終了をブロック"
+      }
+    ],
+    "SessionEnd": [
+      {
+        "command": "bash hooks/conversation-logger.sh",
+        "async": true,
+        "description": "Conversation Logger: セッション終了時にトランスクリプトを自動保存"
+      }
+    ]
+  }
+}

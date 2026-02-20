@@ -248,3 +248,39 @@ Use qdrant-store tool: information="共有すべき知見", collection_name="cab
 **セッション終了時**:
 - セッションファイルの Active Context をクリア
 - Key Learnings に重要な知見を追記
+
+---
+
+## 開発統制
+
+### 非同期レビューパイプライン
+実装大臣が完了報告すると、あなたに自動でレビュー依頼が来ます:
+1. `runtime/pending_reviews/` から依頼を取得
+2. 官僚2名で並列レビュー（qa_bur1: FE系, qa_bur2: BE系 等）
+3. レビュー結果を PM に送信
+4. 承認の場合: `runtime/reviews/<project>_<branch>.approved` を作成
+
+### 4層レビュー
+| 層 | 実行者 | タイミング |
+|---|---|---|
+| Layer 1: セルフレビュー | 実装大臣 | 実装完了時 |
+| Layer 2: 独立AIレビュー | あなた + 官僚 | 自動トリガー |
+| Layer 3: クロス大臣レビュー | 別ドメイン大臣 | Maintenance のみ |
+| Layer 4: 人間QA | 天皇 | develop→main 昇格時 |
+
+### マージゲート
+QA 承認なしには develop へのマージを許可しない。
+`runtime/reviews/<project>_<branch>.approved` ファイルがマージの鍵。
+
+### DAILY_SCORE
+品質メトリクス生成: `bash scripts/daily_score.sh <project>`
+
+### Qdrant 記憶活用
+レビュー開始時に過去の指摘パターンを検索:
+```
+Use qdrant-find tool: query="このプロジェクトの過去のセキュリティ指摘", collection_name="agent_m_qa"
+```
+
+### QA スケーリング
+レビュー負荷が高い場合、QA 大臣2号機が自動起動される場合があります。
+pending_reviews が 3 件を超えると `qa_scaler.sh` がスケールアップを判断します。

@@ -528,3 +528,54 @@ Use qdrant-store tool: information="共有すべき知見", collection_name="cab
 **セッション終了時**:
 - セッションファイルの Active Context をクリア
 - Key Learnings に重要な知見を追記
+
+---
+
+## 開発統制
+
+### フェーズ管理
+プロジェクトには3つのフェーズがあり、`projects/<name>/PROJECT.yaml` の `phase` で管理:
+- **Genesis** (L2): 提案のみ。main 直接コミット可。最大速度で開発
+- **Growth** (L4): 警告。feature/* ブランチ必須。TDD・QA レビュー有効
+- **Maintenance** (L5): ブロック。main 直接コミット禁止。セルフレビュー必須
+
+フェーズ遷移: `bash scripts/phase_transition.sh <project> <phase>`（天皇の指示で実行）
+
+### 五段階開発手続（Growth/Maintenance）
+```
+Phase 0: 要件定義       天皇 → PM（あなた）
+Phase 1: 設計対話       PM + 設計大臣 + プロダクト大臣
+Phase 2: 自律実装       実装大臣 + 官僚（worktree内）【並列】
+Phase 3: 非同期レビュー  QA大臣（自動トリガー）
+Phase 4: マージ + QA    PM + 天皇
+```
+- Phase 2 では複数大臣が並列実装。大臣は Fire & Forget で報告→終了
+- Phase 3 は QA 大臣が非同期でレビュー（実装大臣を待たせない）
+- Phase 4 であなたが QA 承認済みブランチを develop にマージ
+
+### タスク送信時の追加フィールド（Growth/Maintenance）
+worktree 対象プロジェクトの場合、タスク YAML に以下を追加:
+- `worktree_path`: 大臣の worktree パス
+- `branch_name`: 作業ブランチ名
+- `release_spec`: リリーススペックへのパス
+
+### 意思決定権限マトリクス
+| 意思決定 | 決定者 | 天皇の確認 |
+|---|---|---|
+| フェーズ遷移 | 天皇 | — |
+| リリーススペック作成 | PM + 設計大臣 | 必要 |
+| feature/* → develop マージ | PM（QA承認後） | 不要 |
+| develop → main 昇格 | 天皇 | — |
+| hotfix 判断 | PM + QA大臣 | 必要 |
+
+### Exit Gate（あなたのセッション終了時）
+Stop hook が以下をチェック:
+- Growth/Maintenance プロジェクトに未レビューの feature/* ブランチがないか
+- 未完了のリリース（release/* ブランチ）がないか
+→ 存在する場合はセッション終了がブロックされます
+
+### Debate Partner（Maintenance のみ）
+設計判断が大きい場合、別の Claude セッションを起動してビジョン検証:
+1. VISION.md + リリーススペックのみを渡す
+2. 「何も作らずに解決できないか？」等の検証質問
+3. 結論を DECISIONS.md に記録

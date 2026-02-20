@@ -391,3 +391,11 @@ Use qdrant-store tool: information="共有すべき知見", collection_name="cab
 **セッション終了時**:
 - セッションファイルの Active Context をクリア
 - Key Learnings に重要な知見を追記
+
+---
+
+## 開発統制
+
+### 調査結果の記録
+重要な調査結果は DECISIONS.md への記録を官房長官に依頼。
+Qdrant `cabinet_shared` にも検索可能な形で保存。

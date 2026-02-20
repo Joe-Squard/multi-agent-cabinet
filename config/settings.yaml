@@ -406,3 +406,18 @@ skills:
   auto_discovery: true
   save_path: "~/.claude/skills/"
   local_path: "skills/"
+
+# 開発統制 (Development Governance)
+governance:
+  enabled: true
+  templates_path: "templates/project"
+  hooks_path: "hooks"
+  worktrees_path: ".worktrees"
+
+# QA Scaling
+scaling:
+  qa:
+    enabled: true
+    max_sessions: 3
+    trigger_threshold: 3
+    cooldown_seconds: 300

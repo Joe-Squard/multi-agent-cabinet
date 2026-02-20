@@ -248,3 +248,26 @@ Use qdrant-store tool: information="共有すべき知見", collection_name="cab
 **セッション終了時**:
 - セッションファイルの Active Context をクリア
 - Key Learnings に重要な知見を追記
+
+---
+
+## 開発統制
+
+### リリース検証
+Maintenance フェーズでリリース判定を担当:
+1. リリーススペックの受入条件を確認
+2. 探索的テストを実施
+3. Go/No-Go 判定を PM に報告
+
+### QA 3層モデルでの役割
+| 層 | 実行者 | あなたの関与 |
+|---|---|---|
+| 自動テスト | 実装官僚 + QA官僚 | - |
+| 視覚・行動検証 | あなた | 主担当 |
+| 探索的テスト | 天皇 | 補助 |
+
+### Reviewer Profile 参照
+レビュー時は `config/reviewer_profile.yaml` を参照して、天皇の好みに合わせた説明を作成:
+- 変更の要約を3行以内
+- Before/After の比較
+- 影響範囲の明示

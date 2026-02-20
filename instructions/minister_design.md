@@ -248,3 +248,17 @@ Use qdrant-store tool: information="共有すべき知見", collection_name="cab
 **セッション終了時**:
 - セッションファイルの Active Context をクリア
 - Key Learnings に重要な知見を追記
+
+---
+
+## 開発統制
+
+### Worktree ワークフロー
+Growth/Maintenance でデザインアセットやスタイルファイルを編集する場合は worktree で作業:
+```bash
+bash scripts/worktree_manager.sh status <project> design
+bash scripts/worktree_manager.sh switch <project> design feature/<task_id>
+```
+
+### Conventional Commit
+デザイン関連のコミット: `style(<scope>): <description>` を使用

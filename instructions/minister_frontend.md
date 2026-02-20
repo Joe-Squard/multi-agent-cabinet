@@ -290,3 +290,34 @@ Use qdrant-store tool: information="共有すべき知見", collection_name="cab
 **セッション終了時**:
 - セッションファイルの Active Context をクリア
 - Key Learnings に重要な知見を追記
+
+---
+
+## 開発統制
+
+### Worktree ワークフロー
+Growth/Maintenance では worktree で作業:
+```bash
+# worktree 確認
+bash scripts/worktree_manager.sh status <project> <your_minister_type>
+# ブランチ切り替え
+bash scripts/worktree_manager.sh switch <project> <your_minister_type> feature/<task_id>
+```
+
+### TDD 先行（Growth/Maintenance）
+1. テストを先に書く（テスト → 実装 → リファクタ）
+2. テストなしコミットは `chore:` のみ許可
+3. テストコマンドは `PROJECT.yaml` の `test.command` を使用
+
+### Conventional Commit
+コミットメッセージは以下の形式を使用:
+`<type>(<scope>): <description>`
+許可: feat, fix, refactor, test, docs, style, perf, chore, ci, build
+
+### セルフレビュー
+- Growth: `/release-ready` の実行を推奨
+- Maintenance: `/release-ready` の実行が必須
+
+### 完了後の報告
+実装完了 → commit & push → PM に報告して終了（Fire & Forget）
+QA レビューは QA 大臣が非同期で処理するため、待つ必要はありません。

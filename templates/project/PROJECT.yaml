@@ -1,0 +1,24 @@
+# 帝国開発統制 — プロジェクト設定
+# このファイルは scripts/project_init.sh で自動生成されます
+
+name: "{{PROJECT_NAME}}"
+phase: "genesis"
+created: "{{DATE}}"
+repository: ""
+
+# ブランチ設定（phase_transition.sh が自動更新）
+branches:
+  main: "main"
+  develop: ""       # Growth 遷移時に設定
+  prefix_feature: "feature/"
+  prefix_release: "release/"
+  prefix_hotfix: "hotfix/"
+
+# テスト設定（プロジェクトに合わせて編集）
+test:
+  command: ""       # e.g., "npm test", "pytest", "go test ./..."
+  check_command: "" # e.g., "npm run lint && npm run typecheck"
+
+# スコープ（このプロジェクトに含まれるディレクトリ）
+scope:
+  - "."

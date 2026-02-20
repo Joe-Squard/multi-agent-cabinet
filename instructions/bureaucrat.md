@@ -374,3 +374,18 @@ Use qdrant-store tool: information="共有すべき知見", collection_name="cab
 **セッション終了時**:
 - セッションファイルの Active Context をクリア
 - Key Learnings に重要な知見を追記
+
+---
+
+## 開発統制
+
+### Worktree 認識
+Growth/Maintenance プロジェクトでは、大臣から指定された worktree パスで作業すること。
+メインworktree（`projects/<name>/` 直下）への直接編集は Hook でブロックされます。
+
+### SubagentStart 注入ルール
+起動時に Hook から以下のルールが自動注入される場合があります:
+- **実装系**: TDD 先行必須（テスト → 実装 → リファクタ）、Conventional Commit
+- **QA系**: レビュー観点（セキュリティ、パフォーマンス、エラーハンドリング）
+- **調査系**: 読み取り専用
+- **共通**: メインworktree編集禁止、git push は大臣経由

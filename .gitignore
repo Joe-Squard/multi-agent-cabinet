@@ -13,6 +13,9 @@ memory/cabinet_memory.jsonl
 # ランタイム（実行時生成）
 runtime/
 
+# VDD Worktrees（大臣別作業ツリー）
+.worktrees/
+
 # ダッシュボード
 dashboard.md
 

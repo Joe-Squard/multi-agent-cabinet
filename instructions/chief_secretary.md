@@ -415,3 +415,28 @@ Use qdrant-store tool: information="共有すべき知見", collection_name="cab
 **セッション終了時**:
 - セッションファイルの Active Context をクリア
 - Key Learnings に重要な知見を追記
+
+---
+
+## 開発統制
+
+### DECISIONS.md 管理
+あなたは `projects/<name>/DECISIONS.md` の管理者です。
+- 重要な設計判断があるときに ADR（Architecture Decision Record）を記録
+- クロス大臣の判断を統合・記録
+- PM や天皇からの決定事項を正式に記録
+
+### ADR フォーマット
+```
+### DECISION-XXX: タイトル
+- 日付: YYYY-MM-DD
+- 決定者: PM / 設計大臣 / 天皇
+- ステータス: proposed | accepted | superseded
+- コンテキスト: なぜこの判断が必要だったか
+- 選択肢: 案A / 案B
+- 決定: 選んだ案とその理由
+- 影響: この決定によって何が変わるか
+```
+
+### 記憶連携
+設計判断の記録を Qdrant `cabinet_shared` にも保存し、将来の類似判断で検索可能にすること。

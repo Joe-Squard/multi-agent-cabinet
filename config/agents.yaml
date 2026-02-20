@@ -391,3 +391,42 @@ agents:
     reports_to: "minister_uat"
     tmux_session: "m_uat"
     pane_index: 2
+
+  # ========================================
+  # スケーリング用エージェント（QA スケーリング）
+  # ========================================
+
+  - id: "minister_qa_2"
+    name: "QA Minister (Scaled)"
+    japanese_name: "品質管理大臣（増員）"
+    role: "minister"
+    type_key: "qa_2"
+    description: "QA大臣のスケールアウトインスタンス。レビュー負荷が閾値を超えた場合に自動起動"
+    capabilities:
+      - "コードレビュー（非同期）"
+      - "セキュリティ監査"
+      - "テスト品質評価"
+    reports_to: "pm"
+    instruction: "minister_qa"
+    tools_dir: "tools/qa"
+    manages: ["qa2_bur1", "qa2_bur2"]
+    tmux_session: "m_qa_2"
+    always_on: false
+    scalable: true
+    primary: "qa"
+
+  - id: "qa2_bur1"
+    name: "QA2 Bureaucrat 1"
+    role: "bureaucrat"
+    parent: "minister_qa_2"
+    reports_to: "minister_qa_2"
+    tmux_session: "m_qa_2"
+    pane_index: 1
+
+  - id: "qa2_bur2"
+    name: "QA2 Bureaucrat 2"
+    role: "bureaucrat"
+    parent: "minister_qa_2"
+    reports_to: "minister_qa_2"
+    tmux_session: "m_qa_2"
+    pane_index: 2

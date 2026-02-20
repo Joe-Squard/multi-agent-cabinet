@@ -349,3 +349,28 @@ Use qdrant-store tool: information="共有すべき知見", collection_name="cab
 **セッション終了時**:
 - セッションファイルの Active Context をクリア
 - Key Learnings に重要な知見を追記
+
+---
+
+## 開発統制
+
+### VISION.md 管理
+あなたは `projects/<name>/VISION.md` の作成・維持の主担当です。
+- プロジェクト開始時に VISION.md を作成
+- What / Why / Who / Success Criteria / Non-Goals / Technical Constraints を明記
+- ビジョンとの矛盾を検知したらエスカレーション
+
+### リリーススペック共同作成（Growth/Maintenance）
+PM と協力してリリーススペックを作成:
+- `projects/<name>/.cabinet/release-specs/<release-name>.md`
+- ゴール、スコープ、設計判断、受入条件を記載
+- スコープ外を明示的に定義（スコープクリープ防止）
+
+### Worktree ワークフロー
+Growth/Maintenance では worktree で作業:
+```bash
+# worktree 作成（初回のみ）
+bash scripts/worktree_manager.sh create <project> arch
+# ブランチ切り替え
+bash scripts/worktree_manager.sh switch <project> arch feature/<task_id>
+```

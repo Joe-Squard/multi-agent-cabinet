@@ -427,3 +427,67 @@ MIT License
 ---
 
 **重要**: このシステムは階層的指揮命令を厳守してください。首相がルーティングを行い、官房長官と大臣は同格のピアとして首相直下で動きます。大臣はオンデマンド起動し、インスタンス上限（20）を超えないよう管理してください。
+
+---
+
+## 開発統制
+
+### 3フェーズモデル
+プロジェクトには3つのフェーズがあり、`projects/<name>/PROJECT.yaml` で管理:
+
+| フェーズ | 強制レベル | ブランチ戦略 | Worktree | TDD | レビュー |
+|---|---|---|---|---|---|
+| **Genesis** | L2 (提案) | main直接コミット可 | 不要 | 推奨 | 任意 |
+| **Growth** | L4 (警告) | main←develop←feature/* | 必須 | 強制 | QA必須(非同期) |
+| **Maintenance** | L5 (ブロック) | +release/*, hotfix/* | 必須 | 強制 | QA+UAT+クロス |
+
+### 統制コマンド
+```bash
+# プロジェクト初期化
+bash scripts/project_init.sh <project_name>
+
+# フェーズ遷移
+bash scripts/phase_transition.sh <project> <phase>
+bash scripts/phase_transition.sh <project> status
+bash scripts/phase_transition.sh list
+
+# Worktree 管理
+bash scripts/worktree_manager.sh create <project> <minister_type> [branch]
+bash scripts/worktree_manager.sh switch <project> <minister_type> <branch>
+bash scripts/worktree_manager.sh list
+bash scripts/worktree_manager.sh cleanup <project>
+```
+
+### Hook システム（8つ）
+| Hook | イベント | 役割 |
+|---|---|---|
+| worktree-guard | PreToolUse(Write/Edit) | メインworktree直接編集ブロック |
+| commit-guard | PreToolUse(Bash) | 危険git操作ブロック |
+| gh-guard | PreToolUse(Bash) | PR自己承認・main直接マージ防止 |
+| subagent-inject | SubagentStart | 官僚へTDD/worktreeルール注入 |
+| review-enforcement | Stop | PM: 未レビューブランチ終了ブロック |
+| release-completion | Stop | PM: 未完了リリース終了ブロック |
+| branch-reminder | UserPromptSubmit | 実装キーワード検出→ブランチ作成リマインド |
+| conversation-logger | SessionEnd(async) | トランスクリプト自動保存 |
+
+### 五段階開発手続（非同期版）
+1. **要件定義**: 天皇 → PM
+2. **設計対話**: PM + 設計大臣 + プロダクト大臣
+3. **自律実装**: 実装大臣 + 官僚（worktree内、並列）
+4. **非同期レビュー**: QA大臣（自動、大臣は待たない）
+5. **マージ + QA**: PM + 天皇
+
+### 意思決定権限マトリクス
+| 意思決定 | 決定者 | 天皇の確認 |
+|---|---|---|
+| ビジョン変更 | 天皇 | — |
+| フェーズ遷移 | 天皇 | — |
+| リリーススペック | PM + 設計大臣 | 必要 |
+| feature→develop マージ | PM（QA承認後） | 不要 |
+| develop→main 昇格 | 天皇 | — |
+| 実装内技術判断 | 実装大臣 | 不要 |
+
+### Conventional Commit
+Growth/Maintenance では以下の形式を使用:
+`<type>(<scope>): <description>`
+許可: feat, fix, refactor, test, docs, style, perf, chore, ci, build
