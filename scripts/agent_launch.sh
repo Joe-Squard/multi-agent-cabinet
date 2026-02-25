@@ -33,7 +33,7 @@ if ! tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
     exit 1
 fi
 
-# Claude 既起動チェック
+# Claude 既起動チェック（pane の直接子プロセスで検索）
 PANE_PID=$(tmux display-message -t "$TMUX_TARGET" -p '#{pane_pid}')
 if pgrep -P "$PANE_PID" -f "claude" >/dev/null 2>&1; then
     echo "✅ $AGENT_ID: Claude Code は既に起動済み"
@@ -48,33 +48,44 @@ else
     tmux send-keys -t "$TMUX_TARGET" "cd $BASE_DIR && claude --dangerously-skip-permissions" C-m
 fi
 
-# --dangerously-skip-permissions の WARNING ダイアログを自動承認
+# ダイアログ自動承認 + 初期化完了検出
 ELAPSED=0
-DIALOG_HANDLED=false
+TRUST_HANDLED=false
+ACCEPT_HANDLED=false
 while [ "$ELAPSED" -lt "$MAX_WAIT" ]; do
     sleep "$POLL_INTERVAL"
     ELAPSED=$((ELAPSED + POLL_INTERVAL))
 
-    PANE_CONTENT=$(tmux capture-pane -t "$TMUX_TARGET" -p -S -15 2>/dev/null || true)
+    PANE_CONTENT=$(tmux capture-pane -t "$TMUX_TARGET" -p -S -20 2>/dev/null || true)
 
-    # WARNING ダイアログ検出 → "Yes, I accept" を選択
-    if [ "$DIALOG_HANDLED" = "false" ] && echo "$PANE_CONTENT" | grep -q "Yes, I accept"; then
-        echo "🔓 $AGENT_ID: 権限ダイアログを自動承認中..."
-        # Down arrow で "Yes, I accept" を選択し、Enter で確定
-        tmux send-keys -t "$TMUX_TARGET" Down
-        sleep 0.3
-        tmux send-keys -t "$TMUX_TARGET" Enter
-        DIALOG_HANDLED=true
-        sleep 2
+    # 1) Trust folder ダイアログ → Enter で承認（カーソルは既に "Yes, I trust" 上）
+    if echo "$PANE_CONTENT" | grep -q "Yes, I trust this folder"; then
+        if [ "$TRUST_HANDLED" = "false" ]; then
+            echo "🔓 $AGENT_ID: Trust ダイアログを自動承認中..."
+            tmux send-keys -t "$TMUX_TARGET" Enter
+            TRUST_HANDLED=true
+            sleep 2
+        fi
         continue
     fi
 
-    # Claude Code の初期化完了サインを検出（WARNING ダイアログの ❯ を除外）
+    # 2) dangerously-skip-permissions ダイアログ（v2.1未満の旧バージョン用）
     if echo "$PANE_CONTENT" | grep -q "Yes, I accept"; then
-        # まだ WARNING ダイアログが表示中 → スキップ
+        if [ "$ACCEPT_HANDLED" = "false" ]; then
+            echo "🔓 $AGENT_ID: 権限ダイアログを自動承認中..."
+            tmux send-keys -t "$TMUX_TARGET" Down
+            sleep 0.3
+            tmux send-keys -t "$TMUX_TARGET" Enter
+            ACCEPT_HANDLED=true
+            sleep 2
+        fi
         continue
     fi
-    if echo "$PANE_CONTENT" | grep -qE '(❯|>|╭|╰|Type your|How can)'; then
+
+    # 3) Claude Code の初期化完了サインを検出
+    #    v2.1.53+: 'bypass permissions' / 'Try "' / '❯'
+    #    旧バージョン: '╭─' / '╰─' / 'Type your prompt' / 'How can I help'
+    if echo "$PANE_CONTENT" | grep -qE '(╭─|╰─|Type your prompt|How can I help|bypass permissions|Try "|❯ )'; then
         echo "✅ $AGENT_ID: Claude Code 初期化完了 (${ELAPSED}秒)"
         break
     fi
@@ -85,61 +96,30 @@ if [ "$ELAPSED" -ge "$MAX_WAIT" ]; then
     exit 1
 fi
 
-# 大臣タイプから指示書名を推定（minister_leader ロール用）
-get_instruction_name() {
+# 大臣タイプから指示書名・ツールDir・type_key を一括取得
+# Usage: get_minister_info <agent_id> → sets MINISTER_INSTRUCTION, MINISTER_TOOLS_DIR, MINISTER_TYPE_KEY
+get_minister_info() {
     local agent_id="$1"
+    # instruction_name:tools_dir:type_key
+    local info
     case "$agent_id" in
-        minister_product) echo "minister_product" ;;
-        minister_research) echo "minister_research" ;;
-        minister_arch)  echo "minister_architect" ;;
-        minister_fe)    echo "minister_frontend" ;;
-        minister_be*)   echo "minister_backend" ;;
-        minister_mob)   echo "minister_mobile" ;;
-        minister_infra) echo "minister_infra" ;;
-        minister_ai)    echo "minister_ai" ;;
-        minister_qa)    echo "minister_qa" ;;
-        minister_design) echo "minister_design" ;;
-        minister_uat)   echo "minister_uat" ;;
-        *)              echo "unknown" ;;
+        minister_product)  info="minister_product:tools/product:product" ;;
+        minister_research) info="minister_research:tools/research:research" ;;
+        minister_arch)     info="minister_architect:tools/architect:arch" ;;
+        minister_fe)       info="minister_frontend:tools/frontend:fe" ;;
+        minister_be*)      info="minister_backend:tools/backend:be" ;;
+        minister_mob)      info="minister_mobile:tools/mobile:mob" ;;
+        minister_infra)    info="minister_infra:tools/infra:infra" ;;
+        minister_ai)       info="minister_ai:tools/ai:ai" ;;
+        minister_qa)       info="minister_qa:tools/qa:qa" ;;
+        minister_design)   info="minister_design:tools/design:design" ;;
+        minister_uat)      info="minister_uat:tools/uat:uat" ;;
+        *)                 info="unknown:::" ;;
     esac
-}
-
-# 大臣タイプから専用ツールディレクトリを推定
-get_tools_dir() {
-    local agent_id="$1"
-    case "$agent_id" in
-        minister_product) echo "tools/product" ;;
-        minister_research) echo "tools/research" ;;
-        minister_arch)  echo "tools/architect" ;;
-        minister_fe)    echo "tools/frontend" ;;
-        minister_be*)   echo "tools/backend" ;;
-        minister_mob)   echo "tools/mobile" ;;
-        minister_infra) echo "tools/infra" ;;
-        minister_ai)    echo "tools/ai" ;;
-        minister_qa)    echo "tools/qa" ;;
-        minister_design) echo "tools/design" ;;
-        minister_uat)   echo "tools/uat" ;;
-        *)              echo "" ;;
-    esac
-}
-
-# 大臣の type_key を取得
-get_type_key() {
-    local agent_id="$1"
-    case "$agent_id" in
-        minister_product) echo "product" ;;
-        minister_research) echo "research" ;;
-        minister_arch)  echo "arch" ;;
-        minister_fe)    echo "fe" ;;
-        minister_be*)   echo "be" ;;
-        minister_mob)   echo "mob" ;;
-        minister_infra) echo "infra" ;;
-        minister_ai)    echo "ai" ;;
-        minister_qa)    echo "qa" ;;
-        minister_design) echo "design" ;;
-        minister_uat)   echo "uat" ;;
-        *)              echo "" ;;
-    esac
+    MINISTER_INSTRUCTION="${info%%:*}"
+    local rest="${info#*:}"
+    MINISTER_TOOLS_DIR="${rest%%:*}"
+    MINISTER_TYPE_KEY="${rest##*:}"
 }
 
 # 役割に応じた初期指示を構成
@@ -185,19 +165,17 @@ case "$ROLE" in
 短く確認の返答をしてください。"
         ;;
     minister_leader)
-        INSTRUCTION=$(get_instruction_name "$AGENT_ID")
-        TOOLS_DIR=$(get_tools_dir "$AGENT_ID")
-        TYPE_KEY=$(get_type_key "$AGENT_ID")
+        get_minister_info "$AGENT_ID"
         INIT_MSG="あなたは内閣制度マルチエージェントシステムの専門大臣（チームリーダー）です。
 
-まず instructions/${INSTRUCTION}.md を Read ツールで読み込み、その指示に従ってください。
+まず instructions/${MINISTER_INSTRUCTION}.md を Read ツールで読み込み、その指示に従ってください。
 
 基本情報:
 - agent_id: ${AGENT_ID}
 - inbox: queue/inbox/${AGENT_ID}/ （ディレクトリ内に .yaml ファイルが届きます）
 - 作業ディレクトリ: $BASE_DIR
-- 専用ツール: ${TOOLS_DIR}/
-- 配下官僚: ${TYPE_KEY}_bur1, ${TYPE_KEY}_bur2
+- 専用ツール: ${MINISTER_TOOLS_DIR}/
+- 配下官僚: ${MINISTER_TYPE_KEY}_bur1, ${MINISTER_TYPE_KEY}_bur2
 
 あなたは首相(PM)に直接報告するチームリーダーです。
 シンプルなタスクは自分で実行、複雑なタスクは官僚に委譲してください。
@@ -205,7 +183,7 @@ case "$ROLE" in
 
 メッセージが届くと自動通知されます。通知を受けたら Bash で ls queue/inbox/${AGENT_ID}/ を実行し、各ファイルを Read ツールで読み込んで処理してください。処理後は各ファイルを Bash で rm してください。
 
-官僚へのタスク送信: ./scripts/inbox_write.sh ${TYPE_KEY}_bur1 \"メッセージ\" --from ${AGENT_ID}
+官僚へのタスク送信: ./scripts/inbox_write.sh ${MINISTER_TYPE_KEY}_bur1 \"メッセージ\" --from ${AGENT_ID}
 首相への報告: ./scripts/inbox_write.sh pm \"メッセージ\" --from ${AGENT_ID} --type report
 他大臣への質問: ./scripts/inbox_write.sh minister_XX \"質問\" --from ${AGENT_ID} --type clarification
 
@@ -259,13 +237,11 @@ case "$ROLE" in
         ;;
 esac
 
-# 初期指示を送信（load-buffer + paste-buffer でエスケープ問題を回避）
+# 初期指示を送信（パイプ経由で load-buffer → paste-buffer。テンプファイル不使用）
 sleep 2
-TMPFILE=$(mktemp /tmp/agent_init_XXXXXX)
-echo "$INIT_MSG" > "$TMPFILE"
-tmux load-buffer -b "init_${AGENT_ID}" "$TMPFILE"
+echo "$INIT_MSG" | tmux load-buffer -b "init_${AGENT_ID}" -
 tmux paste-buffer -b "init_${AGENT_ID}" -t "$TMUX_TARGET"
-rm -f "$TMPFILE"
+tmux delete-buffer -b "init_${AGENT_ID}" 2>/dev/null || true
 sleep 0.5
 tmux send-keys -t "$TMUX_TARGET" Enter
 

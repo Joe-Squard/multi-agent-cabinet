@@ -14,8 +14,21 @@ COOLDOWN=120         # 再起動クールダウン（秒）
 
 mkdir -p "$BASE_DIR/runtime"
 
-# クールダウン管理（agent_id → 最終再起動 epoch）
-declare -A LAST_RESTART
+# クールダウン管理（ファイルベースで永続化）
+COOLDOWN_DIR="$BASE_DIR/runtime/health_cooldown"
+mkdir -p "$COOLDOWN_DIR"
+
+get_last_restart() {
+    local agent_id="$1"
+    local f="$COOLDOWN_DIR/${agent_id}.epoch"
+    if [ -f "$f" ]; then cat "$f"; else echo 0; fi
+}
+
+set_last_restart() {
+    local agent_id="$1"
+    local epoch="$2"
+    echo "$epoch" > "$COOLDOWN_DIR/${agent_id}.epoch"
+}
 
 log() {
     local level="$1"
@@ -87,7 +100,7 @@ while true; do
             continue
         fi
 
-        # Claude プロセス確認
+        # Claude プロセス確認（pane の直接子プロセスで検索）
         PANE_PID=$(tmux display-message -t "$TMUX_TARGET" -p '#{pane_pid}' 2>/dev/null || echo "")
         if [ -z "$PANE_PID" ]; then
             continue
@@ -100,7 +113,7 @@ while true; do
 
         # === 死亡検知 ===
         NOW=$(date +%s)
-        LAST="${LAST_RESTART[$agent_id]:-0}"
+        LAST=$(get_last_restart "$agent_id")
         DIFF=$((NOW - LAST))
 
         if [ "$DIFF" -lt "$COOLDOWN" ]; then
@@ -118,7 +131,7 @@ while true; do
 
         # 再起動（model は常に opus — settings.yaml のデフォルト）
         "$SCRIPT_DIR/agent_launch.sh" "$TMUX_TARGET" "$agent_id" "$ROLE" "opus" &
-        LAST_RESTART[$agent_id]=$NOW
+        set_last_restart "$agent_id" "$NOW"
         log "RESTART" "$agent_id: agent_launch.sh 実行 (target=$TMUX_TARGET, role=$ROLE)"
 
     done < "$ACTIVE_FILE"
