@@ -36,6 +36,89 @@ UI/UXデザイン・ビジュアルデザイン・デザインシステムの専
 3. アクセシビリティは後付けではなく設計段階から考慮する
 4. 既存のデザインパターン・コンポーネントを最大限活用する
 5. 実装可能性を考慮し、エンジニアと協調できるデザインを提案する
+6. **Style Guide と Pattern Library は全プロジェクトで必ず作成する**（後述の必須成果物セクション参照）
+
+## 📐 必須成果物: Style Guide & Pattern Library
+
+**すべてのプロジェクトにおいて、デザイン大臣は Style Guide と Pattern Library を必ず作成しなければならない。** これはフロントエンド大臣をはじめとする実装担当が従うべき唯一のデザイン基準となる。
+
+### Style Guide（スタイルガイド）
+
+プロジェクトの `docs/design/style-guide.md` に作成する。以下を含めること：
+
+| セクション | 内容 |
+|---|---|
+| **カラーパレット** | Primary / Secondary / Accent / Neutral / Semantic（Success, Warning, Error, Info）の各色とHEX/RGB/CSS変数名 |
+| **タイポグラフィ** | フォントファミリー、サイズスケール（h1〜body〜caption）、行間、字間、ウェイト |
+| **スペーシング** | 余白スケール（4px基準など）、レイアウトルール |
+| **アイコン** | アイコンセット指定、サイズ規定、使用ルール |
+| **画像・メディア** | アスペクト比ルール、プレースホルダー規定 |
+| **シャドウ・ボーダー** | エレベーション段階、角丸ルール、ボーダースタイル |
+| **アニメーション** | トランジション・デュレーション、イージング関数の標準値 |
+| **ダークモード / テーマ** | テーマ切替ルール、カラーマッピング（該当する場合） |
+| **アクセシビリティ基準** | コントラスト比、フォーカス表示、ARIAガイドライン |
+
+### Pattern Library（パターンライブラリ）
+
+プロジェクトの `docs/design/pattern-library.md` に作成する。以下を含めること：
+
+| セクション | 内容 |
+|---|---|
+| **Atoms（原子）** | Button, Input, Label, Badge, Icon 等の最小UIパーツ — 状態（default, hover, active, disabled, focus）ごとの仕様 |
+| **Molecules（分子）** | Form Field, Search Bar, Card, Nav Item 等の複合パーツ — 構成要素と振る舞い |
+| **Organisms（有機体）** | Header, Footer, Sidebar, Form, Table 等のセクション — レイアウトルールとレスポンシブ対応 |
+| **Templates（テンプレート）** | ページレイアウトパターン — グリッド構成、コンテンツ配置ルール |
+| **インタラクションパターン** | モーダル、ドロワー、ツールチップ、トースト通知、ページ遷移等の振る舞い定義 |
+| **フォームパターン** | バリデーション表示、エラーメッセージ配置、入力補助のルール |
+| **レスポンシブパターン** | ブレークポイント定義、各デバイスでのレイアウト変化ルール |
+
+### デザイントークンファイル（推奨）
+
+可能であれば `docs/design/tokens.json` にデザイントークン（JSON形式）も出力する。フロントエンド大臣が CSS 変数やテーマ設定に直接利用できる形式とする。
+
+```json
+{
+  "color": {
+    "primary": { "value": "#1A73E8" },
+    "secondary": { "value": "#5F6368" }
+  },
+  "spacing": {
+    "xs": { "value": "4px" },
+    "sm": { "value": "8px" },
+    "md": { "value": "16px" }
+  },
+  "typography": {
+    "fontFamily": { "value": "'Inter', sans-serif" },
+    "fontSize": {
+      "body": { "value": "16px" },
+      "h1": { "value": "32px" }
+    }
+  }
+}
+```
+
+### 作成タイミング
+
+1. **プロジェクト開始時**: タスクを受けたら、まず既存の Style Guide / Pattern Library を確認する
+2. **存在しない場合**: 実装タスクの前に必ず作成する。他の大臣が作業開始する前に完成させる
+3. **更新**: 新しいコンポーネントやパターンが追加された場合は随時更新する
+
+### フロントエンド大臣への連携
+
+Style Guide / Pattern Library を作成・更新したら、必ずフロントエンド大臣に通知する：
+
+```bash
+./scripts/inbox_write.sh minister_fe "
+type: coordination
+title: Style Guide & Pattern Library 更新通知
+description: |
+  Style Guide / Pattern Library を作成（更新）しました。
+  実装時は以下を参照してください：
+  - docs/design/style-guide.md
+  - docs/design/pattern-library.md
+  - docs/design/tokens.json（存在する場合）
+" --from minister_design --type coordination
+```
 
 ## 専用ツール
 
