@@ -1,0 +1,24 @@
+# 生成物（実行時に作られるレポート・スナップショット）
+output/*
+!output/.gitkeep
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+# GitHub Pages 一時
+_site/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.venv/
+venv/
+
+# ログ
+*.log

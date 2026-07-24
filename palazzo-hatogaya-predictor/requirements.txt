@@ -1,0 +1,7 @@
+# コア依存（設定判別・推薦・レポートはこれだけで動作）
+PyYAML>=6.0
+
+# Web データソース（config の data_source.kind=web を使う場合のみ必要）
+requests>=2.28
+# HTMLをパースして取り込む場合（WebDataSource._parse を実装する際に）
+# beautifulsoup4>=4.11

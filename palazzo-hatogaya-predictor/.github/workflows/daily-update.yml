@@ -1,0 +1,95 @@
+name: daily-prediction-update
+
+# =============================================================================
+# 自動更新（サーバー不要）: GitHub Actions のスケジュール実行で毎日予想を更新
+# =============================================================================
+# ・営業時間帯(JST)に複数回、予想を生成して成果物(output/)をアーティファクト保存
+# ・main への push で GitHub Pages に latest.html を公開（任意/要Pages有効化）
+# ・手動実行(workflow_dispatch)にも対応
+#
+# cron は UTC。JST = UTC+9。
+#   0,3,6,9,12 UTC = 9,12,15,18,21 JST（開店〜閉店前をカバー）
+# =============================================================================
+
+on:
+  schedule:
+    - cron: "0 0,3,6,9,12 * * *"
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "対象日 (YYYY-MM-DD, 空欄=当日UTC)"
+        required: false
+        default: ""
+      source:
+        description: "データソース (demo/file/web)"
+        required: false
+        default: "demo"
+  push:
+    branches: [main]
+    paths:
+      - "palazzo-hatogaya-predictor/**"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  predict:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: palazzo-hatogaya-predictor
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests
+        run: python -m unittest discover -s tests -p "test_*.py"
+
+      - name: Generate prediction
+        run: |
+          python -m palazzo_predictor predict \
+            --date "${{ github.event.inputs.date }}" \
+            --source "${{ github.event.inputs.source || 'demo' }}" \
+            --format all --quiet
+        # 注: date が空文字なら argparse 側で当日扱い
+
+      - name: Upload report artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: prediction-report
+          path: |
+            palazzo-hatogaya-predictor/output/latest.html
+            palazzo-hatogaya-predictor/output/latest.json
+            palazzo-hatogaya-predictor/output/latest.txt
+          retention-days: 14
+
+      - name: Prepare Pages site
+        run: |
+          mkdir -p _site
+          cp output/latest.html _site/index.html
+          cp output/latest.json _site/ 2>/dev/null || true
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: palazzo-hatogaya-predictor/_site
+
+  deploy-pages:
+    needs: predict
+    runs-on: ubuntu-latest
+    # Pages を有効化している場合のみ成功。未設定でも predict ジョブは成功する。
+    continue-on-error: true
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

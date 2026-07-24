@@ -1,0 +1,76 @@
+# =============================================================================
+# イベント / 傾向カレンダー (Event Calendar)
+# =============================================================================
+# 「当日がどんな日か」を判定し、事前予想（データが出る前）のヒントに使います。
+# 各ルールは日付条件にマッチしたとき、強さ(strength)と優遇パターンを付与します。
+#
+# ⚠️ 特定日と設定投入の関係はあくまで「経験則の仮説」です。確実性はありません。
+#   実データが溜まると hall_analyzer が実際の傾向を学習し、この仮説を補正します。
+#
+# match:
+#   day_of_month: [10, 20, 30]     … 毎月この日
+#   last_digit_of_day: [0]         … 日付末尾がこれ（0のつく日など）
+#   repdigit_day: true             … ゾロ目の日（11, 22）
+#   weekday: [5, 6]                … 曜日（月=0 … 日=6）
+#   date: ["2026-07-24"]           … 特定日付（ピンポイント）
+# effects:
+#   strength: 0.0〜1.0             … イベントの強さ
+#   favored_last_digits: [7]       … 優遇される台番号末尾
+#   favored_models: [key,...]      … 優遇される機種
+#   favor_corner: true             … 角台優遇
+#   favor_repdigit: true           … ゾロ目台優遇
+#   note: "説明"
+# =============================================================================
+
+events:
+  - name: "ゾロ目の日"
+    match:
+      repdigit_day: true          # 11日, 22日
+    effects:
+      strength: 0.7
+      favor_repdigit: true
+      favored_last_digits: [1, 2]
+      note: "ゾロ目台・末尾に注目されやすい日"
+
+  - name: "0のつく日"
+    match:
+      last_digit_of_day: [0]      # 10, 20, 30日
+    effects:
+      strength: 0.6
+      favored_last_digits: [0]
+      favored_models: [my_juggler_v, gogo_juggler_3]
+      note: "末尾0・看板機種に期待"
+
+  - name: "7のつく日"
+    match:
+      last_digit_of_day: [7]      # 7, 17, 27日
+    effects:
+      strength: 0.55
+      favored_last_digits: [7]
+      favor_repdigit: true
+      note: "7絡み（末尾7・7776等）"
+
+  - name: "週末強化"
+    match:
+      weekday: [5, 6]             # 土日
+    effects:
+      strength: 0.4
+      favor_corner: true
+      favored_models: [my_juggler_v, im_juggler_ex, gogo_juggler_3]
+      note: "集客日。看板機種と角台に配分されやすい"
+
+  # 特定日ピンポイント（店の周年・グランドオープン記念日など、判明していれば追加）
+  # - name: "周年イベント"
+  #   match:
+  #     date: ["2026-08-08"]
+  #   effects:
+  #     strength: 0.9
+  #     favor_corner: true
+  #     favor_repdigit: true
+  #     favored_models: [my_juggler_v]
+  #     note: "全台系・高設定示唆の期待大"
+
+# デフォルト（どのイベントにもマッチしない平日）
+default:
+  strength: 0.2
+  note: "平常営業。データ判別を重視。"

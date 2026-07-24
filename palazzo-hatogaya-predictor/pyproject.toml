@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "palazzo-hatogaya-predictor"
+version = "1.0.0"
+description = "パラッツォ鳩ヶ谷 おすすめ台・設定・激アツ予想システム（ベイズ設定判別 + ホール傾向 + 自動更新）"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+dependencies = [
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+web = ["requests>=2.28", "beautifulsoup4>=4.11"]
+dev = ["pytest>=7.0"]
+
+[project.scripts]
+palazzo-predict = "palazzo_predictor.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
