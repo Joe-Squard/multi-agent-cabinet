@@ -34,26 +34,26 @@ class TestHallAnalyzer(unittest.TestCase):
         self.assertLessEqual(eff["strength"], 0.7)
 
     def test_corner_detection(self):
-        # 島A range [101,120] → 101 と 120 が角
-        self.assertTrue(self.an.is_corner(101))
-        self.assertTrue(self.an.is_corner(120))
-        self.assertFalse(self.an.is_corner(110))
+        # 島A range [201,216] → 201 と 216 が角
+        self.assertTrue(self.an.is_corner(201))
+        self.assertTrue(self.an.is_corner(216))
+        self.assertFalse(self.an.is_corner(210))
 
     def test_pattern_signal_favored_digit(self):
         # 末尾7・7のつく日 → スコアが立つ
-        sig = self.an.pattern_signal(107, "my_juggler_v", "2026-07-27")
+        sig = self.an.pattern_signal(207, "smash_hokuto", "2026-07-27")
         self.assertGreater(sig.score, 0.0)
         self.assertTrue(any("末尾7" in r for r in sig.reasons))
 
     def test_pattern_signal_range(self):
-        for no in (101, 107, 111, 120, 133, 156):
-            sig = self.an.pattern_signal(no, "my_juggler_v", "2026-07-27")
+        for no in (201, 207, 211, 216, 233, 256):
+            sig = self.an.pattern_signal(no, "smash_hokuto", "2026-07-27")
             self.assertGreaterEqual(sig.score, 0.0)
             self.assertLessEqual(sig.score, 1.0)
 
     def test_prior_from_signal_leans_high(self):
-        sig = self.an.pattern_signal(111, "my_juggler_v", "2026-07-27")
-        spec = self.cfg.spec("my_juggler_v")
+        sig = self.an.pattern_signal(211, "smash_hokuto", "2026-07-27")
+        spec = self.cfg.spec("smash_hokuto")
         prior = self.an.prior_from_signal(sig, spec)
         self.assertAlmostEqual(sum(prior.values()), 1.0, places=6)
         if sig.score > 0.2:
@@ -62,10 +62,10 @@ class TestHallAnalyzer(unittest.TestCase):
 
     def test_learning(self):
         history = [
-            {"machine_no": 107, "model_key": "my_juggler_v", "p_high": 0.9},
-            {"machine_no": 117, "model_key": "my_juggler_v", "p_high": 0.8},
-            {"machine_no": 102, "model_key": "im_juggler_ex", "p_high": 0.1},
-            {"machine_no": 103, "model_key": "im_juggler_ex", "p_high": 0.2},
+            {"machine_no": 207, "model_key": "smash_hokuto", "p_high": 0.9},
+            {"machine_no": 217, "model_key": "smash_hokuto", "p_high": 0.8},
+            {"machine_no": 202, "model_key": "tensura", "p_high": 0.1},
+            {"machine_no": 203, "model_key": "tensura", "p_high": 0.2},
         ]
         learned = self.an.learn(history)
         # 末尾7 が高 p_high、末尾2/3 が低 → 末尾7の学習重みが最大

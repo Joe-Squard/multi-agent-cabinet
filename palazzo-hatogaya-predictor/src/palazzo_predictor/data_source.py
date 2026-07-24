@@ -76,7 +76,8 @@ class FileDataSource(DataSource):
             reader = csv.DictReader(f)
             for row in reader:
                 observed = {}
-                for key in ("big", "reg", "grape"):
+                # AT機の主指標は hatsuatari。旧A機の big/reg/grape も後方互換で許容。
+                for key in ("hatsuatari", "cz", "big", "reg", "grape"):
                     v = self._to_int(row.get(key))
                     if v is not None:
                         observed[key] = v
@@ -86,6 +87,7 @@ class FileDataSource(DataSource):
                     total_games=self._to_int(row.get("total_games"), 0) or 0,
                     observed=observed,
                     diff_coins=self._to_int(row.get("diff_coins")),
+                    current_games=self._to_int(row.get("current_games")),
                     date=date_str,
                 ))
         return out
@@ -101,6 +103,7 @@ class FileDataSource(DataSource):
                 total_games=int(row.get("total_games", 0)),
                 observed={k: int(v) for k, v in (row.get("observed") or {}).items()},
                 diff_coins=row.get("diff_coins"),
+                current_games=row.get("current_games"),
                 date=date_str,
             ))
         return out
@@ -216,6 +219,7 @@ class DemoDataSource(DataSource):
                 total_games = rng.randint(2500, 9000)
                 observed = self._simulate(rng, spec, true_setting, total_games)
                 diff = self._simulate_diff(rng, spec, true_setting, total_games)
+                current_games = self._simulate_current_games(rng, spec, true_setting)
 
                 out.append(MachineData(
                     machine_no=no,
@@ -223,6 +227,7 @@ class DemoDataSource(DataSource):
                     total_games=total_games,
                     observed=observed,
                     diff_coins=diff,
+                    current_games=current_games,
                     date=date_str,
                 ))
         return out
@@ -261,6 +266,18 @@ class DemoDataSource(DataSource):
         expected = games * spec.bet_per_game * (payout / 100.0 - 1.0)
         noise = rng.gauss(0, 350)
         return int(round(expected + noise))
+
+    @staticmethod
+    def _simulate_current_games(rng, spec, setting: int) -> int:
+        """現在ハマりG数を天井比で疑似生成（高設定ほど平均は浅め）。"""
+        p = spec.prob("hatsuatari", setting)
+        mean_interval = (1.0 / p) if p else 300.0
+        ceiling = spec.ceiling_games or int(mean_interval * 3)
+        # 0〜天井を低めに歪めて分布（多くは浅い、たまに天井近く）
+        base = rng.random() ** 1.6
+        setting_factor = 1.0 - 0.05 * (setting - 1)  # 設定6で約0.75
+        current = int(base * ceiling * setting_factor)
+        return max(0, min(ceiling, current))
 
     @staticmethod
     def _poisson(rng: random.Random, lam: float) -> int:

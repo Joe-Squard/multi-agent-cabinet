@@ -38,7 +38,7 @@ events:
     effects:
       strength: 0.6
       favored_last_digits: [0]
-      favored_models: [my_juggler_v, gogo_juggler_3]
+      favored_models: [smash_hokuto, monkey_turn_5]
       note: "末尾0・看板機種に期待"
 
   - name: "7のつく日"
@@ -56,7 +56,7 @@ events:
     effects:
       strength: 0.4
       favor_corner: true
-      favored_models: [my_juggler_v, im_juggler_ex, gogo_juggler_3]
+      favored_models: [smash_hokuto, monkey_turn_5, okidoki_gold]
       note: "集客日。看板機種と角台に配分されやすい"
 
   # 特定日ピンポイント（店の周年・グランドオープン記念日など、判明していれば追加）
@@ -67,7 +67,7 @@ events:
   #     strength: 0.9
   #     favor_corner: true
   #     favor_repdigit: true
-  #     favored_models: [my_juggler_v]
+  #     favored_models: [smash_hokuto]
   #     note: "全台系・高設定示唆の期待大"
 
 # デフォルト（どのイベントにもマッチしない平日）

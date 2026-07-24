@@ -22,14 +22,24 @@ class MachineSpec:
     type: str  # "A" | "AT"
     setting_count: int
     bet_per_game: int
-    # indicator名 -> {設定: 確率の分母}  例: {"reg": {1: 439.8, ..., 6: 273.1}}
+    # indicator名 -> {設定: 確率の分母}  例: {"hatsuatari": {1: 399.0, ..., 6: 300.0}}
     indicators: Dict[str, Dict[int, float]]
     # {設定: 機械割(%)}
     payout: Dict[int, float]
+    # 立ち回り用: 天井G数（AT機）。当選が確定/濃厚になるハマりG数の上限。
+    ceiling_games: Optional[int] = None
+    # 立ち回り用: 当たりが集中しやすいゾーン [[開始G, 終了G], ...]（任意）
+    zones: Optional[List[List[int]]] = None
 
     @property
     def settings(self) -> List[int]:
         return list(range(1, self.setting_count + 1))
+
+    def in_zone(self, current_games: Optional[int]) -> bool:
+        """現在ハマりG数が当たりゾーン内かどうか。"""
+        if current_games is None or not self.zones:
+            return False
+        return any(lo <= current_games <= hi for lo, hi in self.zones)
 
     def prob(self, indicator: str, setting: int) -> Optional[float]:
         """指標の1ゲームあたり発生確率（0〜1）。未定義なら None。"""
@@ -55,9 +65,11 @@ class MachineData:
     machine_no: int
     model_key: str
     total_games: int
-    # indicator名 -> 観測回数  例: {"big": 18, "reg": 15, "grape": 860}
+    # indicator名 -> 観測回数  例: {"hatsuatari": 18}（AT機は初当たり回数が主軸）
     observed: Dict[str, int] = field(default_factory=dict)
-    diff_coins: Optional[int] = None  # 差枚（分かれば）
+    diff_coins: Optional[int] = None    # 差枚（分かれば）
+    # 立ち回り用: 現在のハマりG数（最後の当たりからの回転数）。
+    current_games: Optional[int] = None
     date: Optional[str] = None
 
     def to_dict(self) -> dict:
@@ -140,3 +152,49 @@ class Recommendation:
             "estimate": self.estimate.to_dict() if self.estimate else None,
             "signal": self.signal.to_dict() if self.signal else None,
         }
+
+
+# -----------------------------------------------------------------------------
+# 立ち回り: 朝一プラン
+# -----------------------------------------------------------------------------
+@dataclass
+class MorningPick:
+    """開店前の狙い目（優遇パターンから座るべき台）。"""
+
+    machine_no: int
+    model_key: str
+    model_name: str
+    score: float                         # 事前注目度 0〜1
+    reasons: List[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+
+# -----------------------------------------------------------------------------
+# 立ち回り: リアルタイム移動候補
+# -----------------------------------------------------------------------------
+@dataclass
+class MoveCandidate:
+    """今から移動して座る価値のある台（リアルタイム）。"""
+
+    machine_no: int
+    model_key: str
+    model_name: str
+    action: str                          # 移動推奨 / 天井狙い / 撤退候補 / 様子見
+    move_score: float                    # 0〜1
+    setting_score: float                 # 高設定期待度（＝当たりの軽さ）
+    state_score: float                   # 状態（ハマり具合・天井距離）
+    ev_score: float                      # 残り期待値スコア
+    expected_setting: Optional[float] = None
+    p_high: Optional[float] = None
+    hit_rate_denom: Optional[float] = None   # 実測初当たり分母（1/N の N。小さいほど軽い）
+    current_games: Optional[int] = None
+    ceiling_games: Optional[int] = None
+    ceiling_distance: Optional[int] = None
+    in_zone: bool = False
+    expected_value_coins: Optional[float] = None
+    reasons: List[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict:
+        return asdict(self)

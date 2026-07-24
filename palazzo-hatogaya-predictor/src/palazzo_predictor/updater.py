@@ -32,6 +32,7 @@ from .models import MachineData
 from .recommender import CATEGORY_ORDER, Recommender
 from .report import render_html, render_json, render_text
 from .setting_estimator import SettingEstimator
+from .strategy import StrategyAdvisor
 
 
 def _now_str() -> str:
@@ -80,8 +81,12 @@ def run_prediction(
             config.hall_info.get("typical_full_day_games", 8000)),
     )
     recommender = Recommender(config)
+    advisor = StrategyAdvisor(config)
 
     recommendations = []
+    signals_by_no = {}
+    specs_by_no = {}
+    contexts = []
     for machine_no, model_key in roster:
         spec = config.spec(model_key)
         if not spec:
@@ -94,12 +99,24 @@ def run_prediction(
             estimate = estimator.estimate(data, spec, prior)
         rec = recommender.classify(machine_no, spec, estimate, signal)
         recommendations.append(rec)
+        signals_by_no[machine_no] = signal
+        specs_by_no[machine_no] = spec
+        contexts.append({"machine_no": machine_no, "spec": spec,
+                         "estimate": estimate, "data": data})
 
     ranked = recommender.rank(recommendations)
 
     counts = {c: 0 for c in CATEGORY_ORDER}
     for r in ranked:
         counts[r.category] = counts.get(r.category, 0) + 1
+
+    # --- 立ち回り（朝一プラン + リアルタイム移動プラン） ---
+    morning = advisor.morning_plan(signals_by_no, specs_by_no)
+    moves = advisor.move_plan(contexts)
+    strategy = {
+        "morning": morning,
+        "move": [m.to_dict() for m in moves],
+    }
 
     eff = analyzer.effective_effects(date_str)
     return {
@@ -114,6 +131,7 @@ def run_prediction(
         "counts": counts,
         "learned": bool(analyzer.learned.get("last_digit")),
         "recommendations": [r.to_dict() for r in ranked],
+        "strategy": strategy,
     }
 
 

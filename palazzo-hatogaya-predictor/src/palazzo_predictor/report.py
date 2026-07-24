@@ -25,6 +25,14 @@ CATEGORY_COLOR = {
     "おすすめ": "#2e9be8",
     "様子見": "#8a8f98",
 }
+ACTION_COLOR = {
+    "🎯 移動推奨": "#2ea043",
+    "⏰ 天井狙い": "#a371f7",
+    "🚪 撤退/回避": "#8a8f98",
+    "様子見": "#8a8f98",
+}
+MORNING_COLOR = "#e8992e"
+MOVE_COLOR = "#2ea043"
 
 
 # ============================================================================ #
@@ -74,9 +82,29 @@ def render_text(result: dict, top: int = 0) -> str:
         push("  本日は明確な狙い目が検出されませんでした（様子見）。")
         push("")
 
+    _push_strategy(push, result)
+
     push("-" * 64)
     push("  ※ 本予想は統計的推定です。設定は非公開・出玉には乱数が伴うため、")
     push("     100%の的中は原理的に不可能です。余裕資金の範囲でお楽しみください。")
+    push("=" * 64)
+    return "\n".join(lines)
+
+
+def render_strategy_text(result: dict) -> str:
+    """立ち回り（朝一プラン + 移動プラン）だけを表示する集中ビュー。"""
+    lines: List[str] = []
+    push = lines.append
+    push("=" * 64)
+    push(f"  🎰 {result['hall_name']} 立ち回りナビ")
+    push(f"  📅 {result['date']}  （生成: {result.get('generated_at','-')}）")
+    if result.get("events"):
+        push(f"  🗓  本日のイベント: {' / '.join(result['events'])}")
+    push("=" * 64)
+    _push_strategy(push, result)
+    push("-" * 64)
+    push("  ※ 統計推定です。設定は非公開・出玉に乱数を伴い100%的中は不可能。")
+    push("     天井・現在G数はデータ提供元の値に依存します。余裕資金で自己責任にて。")
     push("=" * 64)
     return "\n".join(lines)
 
@@ -102,6 +130,52 @@ def _push_machine(push, r: dict) -> None:
         push(f"        ・{reason}")
 
 
+def _push_strategy(push, result: dict) -> None:
+    strat = result.get("strategy") or {}
+    morning = strat.get("morning") or {}
+    moves = strat.get("move") or []
+
+    # ---- 朝一プラン ----
+    push("🌅 【朝一プラン】本日の優遇狙い（データ前の狙い目）")
+    push("-" * 64)
+    fav = [f for f in (morning.get("favored_models") or []) if f["avg_score"] > 0]
+    if fav:
+        push("  優遇されやすい機種: " + " / ".join(
+            f'{f["model_name"]}({f["avg_score"]*100:.0f}%)' for f in fav[:4]))
+    else:
+        push("  機種優遇の傾向は弱め。データ判別を重視。")
+    picks = morning.get("picks") or []
+    if picks:
+        push("  座るならこの台:")
+        for p in picks[:8]:
+            rs = " / ".join(p["reasons"][:2])
+            push(f"    [{p['machine_no']:>4}番] {p['model_name']}  "
+                 f"注目度{p['score']*100:.0f}%  {rs}")
+    else:
+        push("  明確な朝一狙い目は検出されず。")
+    push("")
+
+    # ---- 移動プラン（リアルタイム） ----
+    push("🏃 【移動プラン】リアルタイム狙い目（今から動くなら）")
+    push("-" * 64)
+    recommend = [m for m in moves
+                 if m["action"] in ("🎯 移動推奨", "⏰ 天井狙い")][:8]
+    if recommend:
+        for m in recommend:
+            push(f"  {m['action']} [{m['machine_no']:>4}番] {m['model_name']}  "
+                 f"移動度{m['move_score']*100:.0f}%  "
+                 f"（軽さ{m['setting_score']*100:.0f}% 状態{m['state_score']*100:.0f}%）")
+            for r in m["reasons"][:3]:
+                push(f"        ・{r}")
+    else:
+        push("  今すぐ動くべき台は検出されていません（様子見）。")
+    bail = [m for m in moves if m["action"] == "🚪 撤退/回避"][:6]
+    if bail:
+        push("  🚪 回避（低設定濃厚・期待値マイナス）: "
+             + ", ".join(f"{m['machine_no']}番" for m in bail))
+    push("")
+
+
 def _posterior_bar(posterior: dict) -> str:
     """設定1〜6の事後確率を簡易バーで表現。"""
     blocks = " ▁▂▃▄▅▆▇█"
@@ -123,7 +197,7 @@ def render_html(result: dict) -> str:
     def esc(x) -> str:
         return html.escape(str(x))
 
-    cards = []
+    cards = [_html_strategy(result, esc)]
     for cat in ["激アツ", "設定示唆", "おすすめ", "様子見"]:
         group = [r for r in recs if r["category"] == cat]
         if not group:
@@ -154,6 +228,76 @@ def render_html(result: dict) -> str:
         summary=summary,
         body="\n".join(cards),
     )
+
+
+def _html_strategy(result: dict, esc) -> str:
+    strat = result.get("strategy") or {}
+    morning = strat.get("morning") or {}
+    moves = strat.get("move") or []
+    out: List[str] = []
+
+    # ---- 朝一プラン ----
+    out.append(f'<h2 class="cat" style="border-color:{MORNING_COLOR}">'
+               f'🌅 朝一プラン <span class="cnt">本日の優遇狙い（データ前）</span></h2>')
+    fav = [f for f in (morning.get("favored_models") or []) if f["avg_score"] > 0][:5]
+    if fav:
+        pills = "".join(
+            f'<span class="pill" style="background:{MORNING_COLOR}">'
+            f'{esc(f["model_name"])} {f["avg_score"]*100:.0f}%</span>' for f in fav)
+        out.append(f'<div class="pills">{pills}</div>')
+    picks = (morning.get("picks") or [])[:8]
+    if picks:
+        out.append('<div class="grid">')
+        for p in picks:
+            reasons = "".join(f"<li>{esc(x)}</li>" for x in p["reasons"][:3])
+            out.append(
+                f'<div class="card" style="border-top:4px solid {MORNING_COLOR}">'
+                f'<div class="card-head"><span class="no">{esc(p["machine_no"])}番</span>'
+                f'<span class="model">{esc(p["model_name"])}</span>'
+                f'<span class="score">{p["score"]*100:.0f}%</span></div>'
+                f'<ul class="reasons">{reasons}</ul></div>')
+        out.append('</div>')
+    else:
+        out.append('<p class="empty">明確な朝一狙い目は検出されず。</p>')
+
+    # ---- 移動プラン（リアルタイム） ----
+    out.append(f'<h2 class="cat" style="border-color:{MOVE_COLOR}">'
+               f'🏃 移動プラン <span class="cnt">リアルタイム狙い目（今から動くなら）</span></h2>')
+    recommend = [m for m in moves
+                 if m["action"] in ("🎯 移動推奨", "⏰ 天井狙い")][:9]
+    if recommend:
+        out.append('<div class="grid">')
+        for m in recommend:
+            color = ACTION_COLOR.get(m["action"], MOVE_COLOR)
+            reasons = "".join(f"<li>{esc(x)}</li>" for x in m["reasons"][:3])
+            denom = (f'<div class="stat"><b>初当たり</b>1/{m["hit_rate_denom"]:.0f}</div>'
+                     if m.get("hit_rate_denom") else "")
+            state = ""
+            if m.get("current_games") is not None and m.get("ceiling_games"):
+                state = (f'<div class="stat"><b>現在/天井</b>'
+                         f'{m["current_games"]}/{m["ceiling_games"]}G</div>')
+            ev = (f'<div class="stat"><b>期待差枚</b>{m["expected_value_coins"]:+.0f}</div>'
+                  if m.get("expected_value_coins") is not None else "")
+            out.append(
+                f'<div class="card" style="border-top:4px solid {color}">'
+                f'<div class="card-head"><span class="no">{esc(m["machine_no"])}番</span>'
+                f'<span class="model">{esc(m["model_name"])}</span>'
+                f'<span class="score">{m["move_score"]*100:.0f}%</span></div>'
+                f'<div class="badge" style="background:{color}">{esc(m["action"])}</div>'
+                f'<div class="stats">{denom}{state}{ev}'
+                f'<div class="stat"><b>軽さ</b>{m["setting_score"]*100:.0f}%</div>'
+                f'<div class="stat"><b>状態</b>{m["state_score"]*100:.0f}%</div></div>'
+                f'<ul class="reasons">{reasons}</ul></div>')
+        out.append('</div>')
+    else:
+        out.append('<p class="empty">今すぐ動くべき台は検出されていません。</p>')
+
+    bail = [m for m in moves if m["action"] == "🚪 撤退/回避"][:8]
+    if bail:
+        chips = ", ".join(f'{esc(m["machine_no"])}番' for m in bail)
+        out.append(f'<p class="empty">🚪 回避（低設定濃厚・期待値マイナス）: {chips}</p>')
+
+    return "\n".join(out)
 
 
 def _html_card(r: dict, esc) -> str:
@@ -233,6 +377,8 @@ h2.cat .cnt{{font-size:13px;color:var(--sub);font-weight:400;margin-left:6px}}
 .stat b{{display:block;color:var(--sub);font-weight:500;font-size:10px}}
 .reasons{{margin:0;padding-left:16px;font-size:12px;color:var(--sub)}}
 .reasons li{{margin:2px 0}}
+.badge{{display:inline-block;color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;margin-bottom:8px}}
+.empty{{color:var(--sub);font-size:13px;margin:6px 0 4px}}
 footer{{margin-top:26px;font-size:12px;color:var(--sub);text-align:center;line-height:1.8}}
 </style></head><body><div class="wrap">
 <header>

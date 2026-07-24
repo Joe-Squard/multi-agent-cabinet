@@ -58,6 +58,14 @@ class Config:
     def data_source(self) -> dict:
         return self.hall.get("data_source", {})
 
+    @property
+    def strategy(self) -> dict:
+        return self.hall.get("strategy", {})
+
+    def strat(self, key: str, default):
+        val = self.strategy.get(key)
+        return val if val is not None else default
+
     def threshold(self, key: str, default: float) -> float:
         val = self.thresholds.get(key)
         return float(val) if val is not None else float(default)
@@ -96,6 +104,10 @@ def _parse_machines(raw: dict) -> Dict[str, MachineSpec]:
             for name, table in (m.get("indicators") or {}).items()
         }
         payout = {int(s): float(v) for s, v in (m.get("payout") or {}).items()}
+        zones = None
+        if m.get("zones"):
+            zones = [[int(z[0]), int(z[1])] for z in m["zones"] if len(z) == 2]
+        ceiling = m.get("ceiling_games")
         specs[key] = MachineSpec(
             key=key,
             name=m.get("name", key),
@@ -104,6 +116,8 @@ def _parse_machines(raw: dict) -> Dict[str, MachineSpec]:
             bet_per_game=int(m.get("bet_per_game", 3)),
             indicators=indicators,
             payout=payout,
+            ceiling_games=int(ceiling) if ceiling is not None else None,
+            zones=zones,
         )
     return specs
 

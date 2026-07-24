@@ -21,7 +21,8 @@ import sys
 
 from .config import load_config
 from .data_source import DemoDataSource
-from .report import render_html, render_json, render_text
+from .report import (render_html, render_json, render_strategy_text,
+                     render_text)
 from .updater import Updater, run_prediction, save_outputs, today_str
 
 
@@ -60,6 +61,14 @@ def build_parser() -> argparse.ArgumentParser:
     pw.add_argument("--once", action="store_true", help="1回だけ実行して終了")
     pw.add_argument("--iterations", type=int, default=0, help="実行回数上限（0=無限）")
     pw.add_argument("--no-hours", action="store_true", help="営業時間チェックを無視")
+
+    # strategy（立ち回り集中ビュー）
+    ps = sub.add_parser("strategy", aliases=["move"],
+                        help="立ち回り（朝一プラン＋リアルタイム移動プラン）だけ表示")
+    _add_common(ps)
+    ps.add_argument("--date", default=None, help="対象日 YYYY-MM-DD（既定: 当日）")
+    ps.add_argument("--source", default=None, choices=["demo", "file", "web"])
+    ps.add_argument("--no-save", action="store_true", help="output/ への保存をしない")
 
     # demo-data
     pd = sub.add_parser("demo-data", help="デモCSVを data/raw に書き出し")
@@ -116,6 +125,16 @@ def cmd_watch(args) -> int:
     return 0
 
 
+def cmd_strategy(args) -> int:
+    cfg = load_config(args.config_root)
+    date_str = args.date or today_str()
+    result = run_prediction(cfg, date_str, source_kind=args.source)
+    if not args.no_save:
+        save_outputs(cfg, result, formats=("text", "json", "html"))
+    print(render_strategy_text(result))
+    return 0
+
+
 def cmd_demo_data(args) -> int:
     cfg = load_config(args.config_root)
     date_str = args.date or today_str()
@@ -126,11 +145,12 @@ def cmd_demo_data(args) -> int:
     with open(path, "w", encoding="utf-8", newline="") as f:
         w = csv.writer(f)
         w.writerow(["machine_no", "model_key", "total_games",
-                    "big", "reg", "grape", "diff_coins"])
+                    "hatsuatari", "current_games", "diff_coins"])
         for d in rows:
             w.writerow([d.machine_no, d.model_key, d.total_games,
-                        d.observed.get("big", ""), d.observed.get("reg", ""),
-                        d.observed.get("grape", ""), d.diff_coins])
+                        d.observed.get("hatsuatari", ""),
+                        d.current_games if d.current_games is not None else "",
+                        d.diff_coins])
     print(f"デモデータを書き出しました: {path}（{len(rows)}台）")
     print("→ config/hall.yaml の data_source.kind を file にすると読み込めます。")
     return 0
@@ -165,6 +185,8 @@ def main(argv=None) -> int:
     handlers = {
         "predict": cmd_predict,
         "watch": cmd_watch,
+        "strategy": cmd_strategy,
+        "move": cmd_strategy,
         "demo-data": cmd_demo_data,
         "info": cmd_info,
     }
